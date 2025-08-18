@@ -10,6 +10,32 @@ const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || "";
 
 const app = express();
 app.use(express.json());
+interface Message{
+  role: string,
+  content: string
+}
+
+app.post("/chat", async(req,res)=>{
+  const messages = req.body.messages as Message[];
+  const aiMessages = messages.map((message)=>{
+    return {
+      role: message.role,
+      parts: [{text: message.content}]
+    }
+  })
+    const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash",
+    config:{
+      systemInstruction: getSystemPrompt()
+    },
+    contents: aiMessages
+  });
+  console.log(response);
+  res.json({
+    response : response.text
+  })
+  return;
+})
 
 
 app.post("/template", async (req, res) => {
