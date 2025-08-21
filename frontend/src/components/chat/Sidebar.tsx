@@ -8,6 +8,7 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ messages, steps }) => {
+  console.log(steps)
   const [newMessage, setNewMessage] = useState('');
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -35,7 +36,7 @@ const Sidebar: React.FC<SidebarProps> = ({ messages, steps }) => {
                     <div className={`w-2 h-2 rounded-full ${
                       step.status === 'completed' 
                         ? 'bg-green-500' 
-                        : step.status === 'in-progress'
+                        : step.status === 'pending'
                         ? 'bg-yellow-500 animate-pulse'
                         : 'bg-gray-500'
                     }`}></div>

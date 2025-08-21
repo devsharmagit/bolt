@@ -4,11 +4,13 @@ import { BASE_PROMPT, getSystemPrompt } from './prompt.js';
 import {basePrompt as nodeBasePrompt} from "./defaults/node.js";
 import {basePrompt as reactBasePrompt} from "./defaults/react.js";
 import express from "express";
+import cors from "cors";
 
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || "";
   const ai = new GoogleGenAI({ apiKey: GOOGLE_API_KEY });
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 interface Message{
   role: string,
@@ -16,6 +18,8 @@ interface Message{
 }
 
 app.post("/chat", async(req,res)=>{
+  console.log("inside the chat route")
+  console.log(req.body)
   const messages = req.body.messages as Message[];
   const aiMessages = messages.map((message)=>{
     return {

@@ -4,12 +4,15 @@ import Sidebar from './chat/Sidebar';
 import FileExplorer from './chat/FileExplorer';
 import CodeEditor from './chat/CodeEditor';
 import Preview from './chat/Preview';
-import { FileNode, Message, Step } from '../types';
+import { FileNode, Message, Step,  } from '../types';
+import axios from "axios";
+import { BACKEND_URL } from '../config';
+import { parseXml } from '../step';
 
 const ChatPage: React.FC = () => {
   const location = useLocation();
   const initialPrompt = location.state?.initialPrompt || '';
-  
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [steps, setSteps] = useState<Step[]>([]);
   const [selectedFile, setSelectedFile] = useState<string>('src/App.tsx');
@@ -29,33 +32,35 @@ const ChatPage: React.FC = () => {
     { name: 'index.html', type: 'file', content: '<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>Bolt App</title>\n</head>\n<body>\n  <div id="root"></div>\n  <script type="module" src="/src/main.tsx"></script>\n</body>\n</html>' }
   ]);
 
+  type TemplateResponse = {
+    prompts?: string[];
+  };
+  type ChatResponse = {
+    response: string
+  }
+
+  const init = async (initialPrompt: string) => {
+    const response = await axios.post<TemplateResponse>(`${BACKEND_URL}/template`, {
+      prompt: initialPrompt
+    });
+
+    if (response.data?.prompts) {
+      const stepsResponse = await axios.post<ChatResponse>(`${BACKEND_URL}/chat`, {
+        messages: response.data.prompts.map((p: string) => ({
+          role: "user",
+          content : p
+        }))
+      });
+      if(stepsResponse.data?.response){
+        const parsedSteps = parseXml(stepsResponse.data.response)
+        setSteps((prev)=>([...prev, ...parsedSteps]))
+      }
+    }
+  }
+
   useEffect(() => {
     if (initialPrompt) {
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        content: initialPrompt,
-        role: 'user',
-        timestamp: new Date()
-      };
-      
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        content: "I'll help you build that application. Let me start by creating the necessary files and components.",
-        role: 'assistant',
-        timestamp: new Date()
-      };
-
-      setMessages([newMessage, assistantMessage]);
-      
-      // Simulate steps being added
-      setTimeout(() => {
-        setSteps([
-          { id: '1', title: 'Setting up project structure', status: 'completed', description: 'Created basic React app with TypeScript and Tailwind CSS' },
-          { id: '2', title: 'Installing dependencies', status: 'completed', description: 'Added necessary packages for the application' },
-          { id: '3', title: 'Creating components', status: 'in-progress', description: 'Building the main application components' },
-          { id: '4', title: 'Adding styling', status: 'pending', description: 'Implementing the design system and UI components' },
-        ]);
-      }, 1000);
+    init(initialPrompt);
     }
   }, [initialPrompt]);
 
