@@ -34,17 +34,22 @@ const ChatPage: React.FC = () => {
 
   type TemplateResponse = {
     prompts?: string[];
+    uiPrompts?: string[];
   };
   type ChatResponse = {
     response: string
   }
 
-  const init = async (initialPrompt: string) => {
+  
+
+  useEffect(() => {
+    const init = async (initialPrompt: string) => {
     const response = await axios.post<TemplateResponse>(`${BACKEND_URL}/template`, {
       prompt: initialPrompt
     });
-
-    if (response.data?.prompts) {
+    if (response.data?.prompts && response.data.uiPrompts) {
+      const firstSteps = parseXml(response.data.uiPrompts[0])
+      setSteps((prev)=>([...prev, ...firstSteps]));
       const stepsResponse = await axios.post<ChatResponse>(`${BACKEND_URL}/chat`, {
         messages: response.data.prompts.map((p: string) => ({
           role: "user",
@@ -57,8 +62,6 @@ const ChatPage: React.FC = () => {
       }
     }
   }
-
-  useEffect(() => {
     if (initialPrompt) {
     init(initialPrompt);
     }
