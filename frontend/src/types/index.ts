@@ -1,10 +1,10 @@
-export interface FileNode {
+export interface FileItem {
   name: string;
   type: 'file' | 'folder';
+  children?: FileItem[];
   content?: string;
-  children?: FileNode[];
+  path: string;
 }
-
 export interface Message {
   id: string;
   content: string;

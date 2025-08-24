@@ -50,23 +50,12 @@ const CodeEditor: React.FC<CodeEditorProps> = ({ selectedFile, content }) => {
           value={content}
           theme="vs-dark"
           options={{
+            readOnly: true,
             minimap: { enabled: false },
             fontSize: 14,
-            lineNumbers: 'on',
-            renderWhitespace: 'selection',
-            selectOnLineNumbers: true,
-            automaticLayout: true,
-            scrollBeyondLastLine: false,
             wordWrap: 'on',
-            tabSize: 2,
-            insertSpaces: true,
-            fontFamily: 'JetBrains Mono, Fira Code, Consolas, Monaco, monospace',
-            fontLigatures: true,
-            cursorBlinking: 'smooth',
-            cursorSmoothCaretAnimation: "on",
-            smoothScrolling: true,
-            padding: { top: 16, bottom: 16 }
-          }}
+            scrollBeyondLastLine: false,
+      }}
         />
       </div>
     </div>

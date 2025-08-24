@@ -21,25 +21,6 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ files, selectedFile, onFile
     setExpandedFolders(newExpanded);
   };
 
-  const getFileIcon = (fileName: string) => {
-    const ext = fileName.split('.').pop();
-    switch (ext) {
-      case 'tsx':
-      case 'jsx':
-        return '⚛️';
-      case 'ts':
-      case 'js':
-        return '📜';
-      case 'css':
-        return '🎨';
-      case 'html':
-        return '🌐';
-      case 'json':
-        return '📄';
-      default:
-        return '📄';
-    }
-  };
 
   const renderFileNode = (node: FileNode, depth: number = 0, parentPath: string = '') => {
     const currentPath = parentPath ? `${parentPath}/${node.name}` : node.name;
@@ -78,7 +59,6 @@ const FileExplorer: React.FC<FileExplorerProps> = ({ files, selectedFile, onFile
           ) : (
             <>
               <span className="w-4 mr-1"></span>
-              <span className="mr-2 text-xs">{getFileIcon(node.name)}</span>
               <File className="w-4 h-4 mr-2 text-gray-400" />
               <span>{node.name}</span>
             </>

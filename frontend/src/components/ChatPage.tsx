@@ -4,7 +4,7 @@ import Sidebar from './chat/Sidebar';
 import FileExplorer from './chat/FileExplorer';
 import CodeEditor from './chat/CodeEditor';
 import Preview from './chat/Preview';
-import { FileNode, Message, Step,  } from '../types';
+import { FileItem, Message, Step, StepType,  } from '../types';
 import axios from "axios";
 import { BACKEND_URL } from '../config';
 import { parseXml } from '../step';
@@ -18,19 +18,7 @@ const ChatPage: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<string>('src/App.tsx');
   const [activeTab, setActiveTab] = useState<'code' | 'preview'>('code');
   
-  const [files] = useState<FileNode[]>([
-    {
-      name: 'src',
-      type: 'folder',
-      children: [
-        { name: 'App.tsx', type: 'file', content: 'import React from \'react\';\n\nfunction App() {\n  return (\n    <div className="min-h-screen bg-gray-900 text-white">\n      <h1>Hello World</h1>\n    </div>\n  );\n}\n\nexport default App;' },
-        { name: 'index.css', type: 'file', content: '@tailwind base;\n@tailwind components;\n@tailwind utilities;' },
-        { name: 'main.tsx', type: 'file', content: 'import React from \'react\';\nimport ReactDOM from \'react-dom/client\';\nimport App from \'./App\';\nimport \'./index.css\';\n\nReactDOM.createRoot(document.getElementById(\'root\')!).render(\n  <React.StrictMode>\n    <App />\n  </React.StrictMode>,\n);' }
-      ]
-    },
-    { name: 'package.json', type: 'file', content: '{\n  "name": "bolt-app",\n  "version": "1.0.0",\n  "type": "module",\n  "scripts": {\n    "dev": "vite",\n    "build": "vite build"\n  }\n}' },
-    { name: 'index.html', type: 'file', content: '<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n  <title>Bolt App</title>\n</head>\n<body>\n  <div id="root"></div>\n  <script type="module" src="/src/main.tsx"></script>\n</body>\n</html>' }
-  ]);
+  const [files, setFiles] = useState<FileItem[]>([]);
 
   type TemplateResponse = {
     prompts?: string[];
@@ -67,8 +55,73 @@ const ChatPage: React.FC = () => {
     }
   }, [initialPrompt]);
 
+  useEffect(() => {
+    let originalFiles = [...files];
+    let updateHappened = false;
+    steps.filter(({status}) => status === "pending").map(step => {
+      updateHappened = true;
+      if (step?.type === StepType.CreateFile) {
+        let parsedPath = step.path?.split("/") ?? []; // ["src", "components", "App.tsx"]
+        let currentFileStructure = [...originalFiles]; // {}
+        const finalAnswerRef = currentFileStructure;
+  
+        let currentFolder = ""
+        while(parsedPath.length) {
+          currentFolder =  `${currentFolder}/${parsedPath[0]}`;
+          const currentFolderName = parsedPath[0];
+          parsedPath = parsedPath.slice(1);
+  
+          if (!parsedPath.length) {
+            // final file
+            const file = currentFileStructure.find(x => x.path === currentFolder)
+            if (!file) {
+              currentFileStructure.push({
+                name: currentFolderName,
+                type: 'file',
+                path: currentFolder,
+                content: step.code
+              })
+            } else {
+              file.content = step.code;
+            }
+          } else {
+            /// in a folder
+            const folder = currentFileStructure.find(x => x.path === currentFolder)
+            if (!folder) {
+              // create the folder
+              currentFileStructure.push({
+                name: currentFolderName,
+                type: 'folder',
+                path: currentFolder,
+                children: []
+              })
+            }
+  
+            currentFileStructure = currentFileStructure.find(x => x.path === currentFolder)!.children!;
+          }
+        }
+        originalFiles = finalAnswerRef;
+      }
+
+    })
+
+    if (updateHappened) {
+
+      setFiles(originalFiles)
+      setSteps(steps => steps.map((s: Step) => {
+        return {
+          ...s,
+          status: "completed"
+        }
+        
+      }))
+    }
+    console.log(files);
+  }, [steps, files]);
+
+
   const getFileContent = (path: string): string => {
-    const findFile = (nodes: FileNode[], targetPath: string): string => {
+    const findFile = (nodes: FileItem[], targetPath: string): string => {
       for (const node of nodes) {
         if (node.type === 'file' && (node.name === targetPath || targetPath.endsWith(node.name))) {
           return node.content || '';
