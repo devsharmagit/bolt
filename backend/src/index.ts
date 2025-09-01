@@ -13,7 +13,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 interface Message{
-  role: string,
+  role: "user" | "assistant",
   content: string
 }
 
@@ -21,12 +21,12 @@ app.post("/chat", async(req,res)=>{
   console.log("inside the chat route")
   console.log(req.body)
   const messages = req.body.messages as Message[];
-  const aiMessages = messages.map((message)=>{
-    return {
-      role: message.role,
-      parts: [{text: message.content}]
-    }
-  })
+  const aiMessages = messages.map((message) => {
+      return {
+        role: message.role === "assistant" ? "model" : "user", // gemini only accepts model not "assistant"
+        parts: [{text: message.content}]
+      }
+    });
     const response = await ai.models.generateContent({
     model: "gemini-2.5-flash",
     config:{

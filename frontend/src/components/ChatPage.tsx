@@ -4,18 +4,26 @@ import Sidebar from './chat/Sidebar';
 import FileExplorer from './chat/FileExplorer';
 import CodeEditor from './chat/CodeEditor';
 import {Preview} from './chat/Preview';
-import { FileItem, Message, Step, StepType,  } from '../types';
+import { FileItem, Step, StepType,  } from '../types';
 import axios from "axios";
 import { BACKEND_URL } from '../config';
 import { parseXml } from '../step';
 import { useWebContainer } from '../hooks/useWebcontainer';
 
+interface LlmMessage {role: "user" | "assistant", content: string;};
+
 const ChatPage: React.FC = () => {
   const location = useLocation();
   const initialPrompt = location.state?.initialPrompt || '';
-  console.log(initialPrompt)
+
+  const [laoding, setLoading] = useState(false);
+  const [templateSet, setTemplateSet] = useState(false);
+  
+
+  const [llmMessages, setLlmMessages] = useState<LlmMessage[]>([]);
+  
 const webcontainer = useWebContainer();
-  const [messages, setMessages] = useState<Message[]>([]);
+
   const [steps, setSteps] = useState<Step[]>([]);
   const [selectedFile, setSelectedFile] = useState<string>('src/App.tsx');
   const [activeTab, setActiveTab] = useState<'code' | 'preview'>('code');
@@ -37,21 +45,32 @@ const webcontainer = useWebContainer();
     const response = await axios.post<TemplateResponse>(`${BACKEND_URL}/template`, {
       prompt: initialPrompt
     });
+    setTemplateSet(true);
     if (response.data?.prompts && response.data.uiPrompts) {
       const firstSteps = parseXml(response.data.uiPrompts[0])
       setSteps((prev)=>([...prev, ...firstSteps]));
-      const userarr = response.data.prompts.map((p: string) => ({
+      const userarr :LlmMessage[] = response.data.prompts.map((p: string) => ({
           role: "user",
           content : p
         }))
+        setLoading(true);
       const stepsResponse = await axios.post<ChatResponse>(`${BACKEND_URL}/chat`, {
         messages: [...userarr, {role: "user", content: initialPrompt}]
       });
+      setLoading(false);
       if(stepsResponse.data?.response){
         const parsedSteps = parseXml(stepsResponse.data.response)
         setSteps((prev)=>([...prev, ...parsedSteps]))
+
+    setLlmMessages([
+      ...userarr,
+      { role: "user", content: initialPrompt }
+    ]);
+
+    setLlmMessages(x => [...x, {role: "assistant", content: stepsResponse.data.response}])
       }
     }
+    
   }
     if (initialPrompt) {
     init(initialPrompt);
@@ -188,11 +207,34 @@ const webcontainer = useWebContainer();
     return findFile(files, path);
   };
 
+  const handleSend = async(prompt : string)=>{
+
+                    setLoading(true);
+                    const stepsResponse = await axios.post<ChatResponse>(`${BACKEND_URL}/chat`, {
+                      messages: [...llmMessages, {role: "user", content: prompt}]
+                    });
+                    setLoading(false);
+
+                    setLlmMessages(x => [...x, {role: "user", content: prompt}]);
+                    setLlmMessages(x => [...x, {
+                      role: "assistant",
+                      content: stepsResponse.data.response
+                    }]);
+                    
+                    setSteps(s => [
+                      ...s,
+                      ...parseXml(stepsResponse.data.response).map(x => ({
+                        ...x,
+                        status: "pending" as const
+                      }))
+                    ]);
+  }
+
   return (
     <div className="h-screen flex bg-gray-950 text-white overflow-hidden">
       {/* Chat/Steps Sidebar */}
       <div className="w-80 flex-shrink-0 border-r border-gray-800">
-        <Sidebar messages={messages} steps={steps} />
+        <Sidebar loading={loading} messages={llmMessages} steps={steps} handleSend={handleSend} />
       </div>
 
       {/* File Explorer */}

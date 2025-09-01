@@ -6,10 +6,8 @@ export interface FileItem {
   path: string;
 }
 export interface Message {
-  id: string;
   content: string;
   role: 'user' | 'assistant';
-  timestamp: Date;
 }
 
 export enum StepType {

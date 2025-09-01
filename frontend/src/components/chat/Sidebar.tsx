@@ -1,20 +1,25 @@
 import React, { useState } from 'react';
 import { Send, User, Bot } from 'lucide-react';
 import { Message, Step } from '../../types';
+import { Loader } from '../ui/Loader';
+
 
 interface SidebarProps {
   messages: Message[];
   steps: Step[];
+  handleSend: (prompt: string)=>void;
+  loading: boolean;
+  templateSet: boolean
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ messages, steps }) => {
+const Sidebar: React.FC<SidebarProps> = ({ messages, steps, handleSend, loading, templateSet }) => {
   console.log(steps)
   const [newMessage, setNewMessage] = useState('');
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = async(e: React.FormEvent) => {
     e.preventDefault();
     if (newMessage.trim()) {
-      // Handle sending new message
+      await handleSend(newMessage);
       setNewMessage('');
     }
   };
@@ -54,7 +59,6 @@ const Sidebar: React.FC<SidebarProps> = ({ messages, steps }) => {
               <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wide">Conversation</h3>
               {messages.map((message) => (
                 <div
-                  key={message.id}
                   className={`flex items-start space-x-3 ${
                     message.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''
                   }`}
@@ -78,9 +82,6 @@ const Sidebar: React.FC<SidebarProps> = ({ messages, steps }) => {
                     }`}>
                       <p className="text-sm">{message.content}</p>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {message.timestamp.toLocaleTimeString()}
-                    </p>
                   </div>
                 </div>
               ))}
@@ -89,6 +90,7 @@ const Sidebar: React.FC<SidebarProps> = ({ messages, steps }) => {
         </div>
 
         {/* Input */}
+          {(loading || !templateSet) && <Loader />}
         <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-800">
           <div className="flex items-center space-x-2">
             <input
