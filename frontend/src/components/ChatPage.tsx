@@ -3,16 +3,18 @@ import { useLocation } from 'react-router-dom';
 import Sidebar from './chat/Sidebar';
 import FileExplorer from './chat/FileExplorer';
 import CodeEditor from './chat/CodeEditor';
-import Preview from './chat/Preview';
+import {Preview} from './chat/Preview';
 import { FileItem, Message, Step, StepType,  } from '../types';
 import axios from "axios";
 import { BACKEND_URL } from '../config';
 import { parseXml } from '../step';
+import { useWebContainer } from '../hooks/useWebcontainer';
 
 const ChatPage: React.FC = () => {
   const location = useLocation();
   const initialPrompt = location.state?.initialPrompt || '';
-
+  console.log(initialPrompt)
+const webcontainer = useWebContainer();
   const [messages, setMessages] = useState<Message[]>([]);
   const [steps, setSteps] = useState<Step[]>([]);
   const [selectedFile, setSelectedFile] = useState<string>('src/App.tsx');
@@ -38,11 +40,12 @@ const ChatPage: React.FC = () => {
     if (response.data?.prompts && response.data.uiPrompts) {
       const firstSteps = parseXml(response.data.uiPrompts[0])
       setSteps((prev)=>([...prev, ...firstSteps]));
-      const stepsResponse = await axios.post<ChatResponse>(`${BACKEND_URL}/chat`, {
-        messages: response.data.prompts.map((p: string) => ({
+      const userarr = response.data.prompts.map((p: string) => ({
           role: "user",
           content : p
         }))
+      const stepsResponse = await axios.post<ChatResponse>(`${BACKEND_URL}/chat`, {
+        messages: [...userarr, {role: "user", content: initialPrompt}]
       });
       if(stepsResponse.data?.response){
         const parsedSteps = parseXml(stepsResponse.data.response)
@@ -120,6 +123,54 @@ const ChatPage: React.FC = () => {
   }, [steps, files]);
 
 
+  useEffect(() => {
+    const createMountStructure = (files: FileItem[]): Record<string, any> => {
+      const mountStructure: Record<string, any> = {};
+  
+      const processFile = (file: FileItem, isRootFolder: boolean) => {  
+        if (file.type === 'folder') {
+          // For folders, create a directory entry
+          mountStructure[file.name] = {
+            directory: file.children ? 
+              Object.fromEntries(
+                file.children.map(child => [child.name, processFile(child, false)])
+              ) 
+              : {}
+          };
+        } else if (file.type === 'file') {
+          if (isRootFolder) {
+            mountStructure[file.name] = {
+              file: {
+                contents: file.content || ''
+              }
+            };
+          } else {
+            // For files, create a file entry with contents
+            return {
+              file: {
+                contents: file.content || ''
+              }
+            };
+          }
+        }
+  
+        return mountStructure[file.name];
+      };
+  
+      // Process each top-level file/folder
+      files.forEach(file => processFile(file, true));
+  
+      return mountStructure;
+    };
+  
+    const mountStructure = createMountStructure(files);
+  
+    // Mount the structure if WebContainer is available
+    console.log(mountStructure);
+    webcontainer?.mount(mountStructure);
+  }, [files, webcontainer]);
+
+
   const getFileContent = (path: string): string => {
     const findFile = (nodes: FileItem[], targetPath: string): string => {
       for (const node of nodes) {
@@ -182,14 +233,14 @@ const ChatPage: React.FC = () => {
         </div>
 
         {/* Tab Content */}
-        <div className="flex-1">
+        <div className="flex-1 ">
           {activeTab === 'code' ? (
             <CodeEditor 
               selectedFile={selectedFile}
               content={getFileContent(selectedFile)}
             />
           ) : (
-            <Preview />
+            <Preview files={files} webContainer={webcontainer} />
           )}
         </div>
       </div>
