@@ -234,7 +234,7 @@ const webcontainer = useWebContainer();
     <div className="h-screen flex bg-gray-950 text-white overflow-hidden">
       {/* Chat/Steps Sidebar */}
       <div className="w-80 flex-shrink-0 border-r border-gray-800">
-        <Sidebar loading={loading} messages={llmMessages} steps={steps} handleSend={handleSend} />
+        <Sidebar loading={laoding} messages={llmMessages} steps={steps} handleSend={handleSend} templateSet={templateSet}/>
       </div>
 
       {/* File Explorer */}
@@ -282,7 +282,7 @@ const webcontainer = useWebContainer();
               content={getFileContent(selectedFile)}
             />
           ) : (
-            <Preview files={files} webContainer={webcontainer} />
+           webcontainer &&  <Preview files={files} webContainer={webcontainer} />
           )}
         </div>
       </div>
