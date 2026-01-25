@@ -43,19 +43,31 @@ export default function ChatPage() {
       const response = await templateAction(initialPrompt);
       setTemplateSet(true);
       if (response?.prompts && response.uiPrompts) {
-        const firstSteps = parseXml(response.uiPrompts[0]);
-        setSteps((prev) => ([...prev, ...firstSteps]));
+        // Start with ID 1 for the first call
+        const firstSteps = parseXml(response.uiPrompts[0], 1);
+        setSteps((prev) => {
+          const updated = [...prev, ...firstSteps];
+          return updated;
+        });
+        
         const userarr: LlmMessage[] = response.prompts.map((p: string) => ({
           role: "user",
           content: p
         }));
+        
         setLoading(true);
         const stepsResponse = await chatAction([...userarr, { role: "user", content: initialPrompt }]);
         setLoading(false);
+        
         if (stepsResponse?.response) {
           const responseText = stepsResponse.response;
-          const parsedSteps = parseXml(responseText);
-          setSteps((prev) => ([...prev, ...parsedSteps]));
+          
+          // Calculate next available ID from current steps
+          setSteps((prevSteps) => {
+            const maxId = prevSteps.length > 0 ? Math.max(...prevSteps.map(s => s.id)) : 0;
+            const parsedSteps = parseXml(responseText, maxId + 1);
+            return [...prevSteps, ...parsedSteps];
+          });
 
           setLlmMessages([
             ...userarr,
@@ -219,13 +231,18 @@ export default function ChatPage() {
       content: responseText
     }]);
 
-    setSteps(s => [
-      ...s,
-      ...parseXml(responseText).map(x => ({
-        ...x,
-        status: "pending" as const
-      }))
-    ]);
+    setSteps(s => {
+      // Calculate the next available ID
+      const maxId = s.length > 0 ? Math.max(...s.map(step => step.id)) : 0;
+      const parsedSteps = parseXml(responseText, maxId + 1);
+      return [
+        ...s,
+        ...parsedSteps.map(x => ({
+          ...x,
+          status: "pending" as const
+        }))
+      ];
+    });
   };
 
   return (
