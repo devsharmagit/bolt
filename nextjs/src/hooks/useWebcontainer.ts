@@ -1,16 +1,21 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 import { WebContainer } from '@webcontainer/api';
+import { getWebContainer } from '@/lib/webcontainer';
 
 export function useWebContainer() {
-    const [webcontainer, setWebcontainer] = useState<WebContainer>();
+  const [webcontainer, setWebcontainer] = useState<WebContainer | null>(null);
 
-    async function main() {
-        const webcontainerInstance = await WebContainer.boot();
-        setWebcontainer(webcontainerInstance)
-    }
-    useEffect(() => {
-        main();
-    }, [])
+  useEffect(() => {
+    let mounted = true;
 
-    return webcontainer;
+    getWebContainer().then(instance => {
+      if (mounted) setWebcontainer(instance);
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  return webcontainer;
 }

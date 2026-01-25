@@ -1,1 +1,2 @@
-export const BACKEND_URL = 'http://localhost:8000'
+// Configuration constants
+// BACKEND_URL removed - now using Next.js server actions instead
