@@ -10,6 +10,7 @@ interface FileExplorerProps {
 }
 
 export default function FileExplorer({ files, selectedFile, onFileSelect }: FileExplorerProps) {
+
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['src']));
 
   const toggleFolder = (folderName: string) => {

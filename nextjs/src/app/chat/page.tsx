@@ -10,6 +10,7 @@ import Sidebar from '@/components/chat/Sidebar';
 import FileExplorer from '@/components/chat/FileExplorer';
 import CodeEditor from '@/components/chat/CodeEditor';
 import { Preview } from '@/components/chat/Preview';
+import { sortFileStructure } from '@/lib/file';
 
 
 export default function ChatPage() {
@@ -84,14 +85,18 @@ export default function ChatPage() {
   }, [initialPrompt]);
 
   useEffect(() => {
+    const pendingSteps = steps.filter(({ status }) => status === "pending");
+    if (pendingSteps.length === 0) {
+      return;
+    }
+
     let originalFiles = [...files];
     let updateHappened = false;
-    steps.filter(({ status }) => status === "pending").map(step => {
+    pendingSteps.forEach(step => {
       updateHappened = true;
       if (step?.type === StepType.CreateFile) {
         let parsedPath = step.path?.split("/") ?? []; // ["src", "components", "App.tsx"]
-        let currentFileStructure = [...originalFiles]; // {}
-        const finalAnswerRef = currentFileStructure;
+        let currentFileStructure = originalFiles;
 
         let currentFolder = "";
         while (parsedPath.length) {
@@ -128,11 +133,12 @@ export default function ChatPage() {
             currentFileStructure = currentFileStructure.find(x => x.path === currentFolder)!.children!;
           }
         }
-        originalFiles = finalAnswerRef;
       }
     });
 
     if (updateHappened) {
+      // Sort the file structure after all modifications are complete
+      originalFiles = sortFileStructure(originalFiles);
       setFiles(originalFiles);
       setSteps(steps => steps.map((s: Step) => {
         return {
