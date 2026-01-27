@@ -1,6 +1,6 @@
 'use client';
-import { useState } from 'react';
-import { Send, User, Bot } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Send, User, Bot, CheckCircle2, Clock3, Loader2, Sparkles, ListTree } from 'lucide-react';
 import { LlmMessage } from '@/types/chat.type';
 import { Step } from '@/types/file.type';
 import { Loader } from '../ui/Loader';
@@ -16,6 +16,29 @@ interface SidebarProps {
 export default function Sidebar({ messages, steps, handleSend, loading, templateSet }: SidebarProps) {
   const [newMessage, setNewMessage] = useState('');
 
+  const stepStats = useMemo(() => {
+    const total = steps.length;
+    const completed = steps.filter((step) => step.status === 'completed').length;
+    const inProgress = steps.filter((step) => step.status === 'in-progress').length;
+    const pending = total - completed - inProgress;
+    return { total, completed, inProgress, pending };
+  }, [steps]);
+
+  const statusChip = {
+    completed: {
+      icon: <CheckCircle2 className="h-3.5 w-3.5" />,
+      className: 'bg-emerald-500/10 text-emerald-300 ring-1 ring-emerald-500/30'
+    },
+    'in-progress': {
+      icon: <Loader2 className="h-3.5 w-3.5 animate-spin" />,
+      className: 'bg-amber-500/10 text-amber-300 ring-1 ring-amber-500/30'
+    },
+    pending: {
+      icon: <Clock3 className="h-3.5 w-3.5" />,
+      className: 'bg-slate-500/10 text-slate-300 ring-1 ring-slate-500/30'
+    }
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newMessage.trim()) {
@@ -25,87 +48,132 @@ export default function Sidebar({ messages, steps, handleSend, loading, template
   };
 
   return (
-    <div className="h-full flex flex-col bg-gray-900">
-      {/* Content */}
+    <div className="h-full flex flex-col bg-[#0b1021] text-slate-100 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.03)]">
       <div className="h-full flex flex-col">
-        {/* Messages and Steps */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {/* Steps Section */}
+        <div className="flex items-center justify-between px-4 pt-4 pb-2">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-indigo-300" />
+            <span className="text-sm font-semibold uppercase tracking-[0.08em] text-indigo-100">Bolt Assistant</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-slate-400">
+            <ListTree className="h-4 w-4" />
+            <span>{stepStats.completed}/{stepStats.total || 0} steps done</span>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-4">
           {steps.length > 0 && (
-            <div className="space-y-3 mb-6">
-              <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wide">Build Steps</h3>
-              {steps.map((step) => (
-                <div key={step.id} className="border border-gray-800 rounded-lg p-3 bg-gray-800/30">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <div className={`w-2 h-2 rounded-full ${
-                      step.status === 'completed' 
-                        ? 'bg-green-500' 
-                        : step.status === 'pending'
-                        ? 'bg-yellow-500 animate-pulse'
-                        : 'bg-gray-500'
-                    }`}></div>
-                    <h4 className="font-medium text-sm">{step.title}</h4>
-                  </div>
-                  <p className="text-xs text-gray-400 leading-relaxed">{step.description}</p>
+            <div className="rounded-2xl border border-white/5 bg-gradient-to-br from-slate-900/70 to-slate-800/40 shadow-lg p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">Build Steps</p>
+                  <h3 className="text-base font-semibold text-white">Flow overview</h3>
                 </div>
-              ))}
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="px-2 py-1 rounded-full bg-white/5 text-slate-200">{stepStats.inProgress} in flight</span>
+                  <span className="px-2 py-1 rounded-full bg-white/5 text-slate-200">{stepStats.pending} queued</span>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {steps.map((step) => (
+                  <div
+                    key={step.id}
+                    className="group relative overflow-hidden rounded-xl border border-white/5 bg-white/5 backdrop-blur-sm transition hover:border-indigo-400/40 hover:bg-indigo-500/5"
+                  >
+                    <div className="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b from-indigo-400 via-purple-500 to-blue-500" />
+                    <div className="pl-4 pr-3 py-3 flex flex-col gap-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2 text-xs">
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-full px-2 py-1 font-medium ${statusChip[step.status].className}`}
+                          >
+                            {statusChip[step.status].icon}
+                            <span className="capitalize">{step.status.replace('-', ' ')}</span>
+                          </span>
+                          {step.path && <span className="text-slate-400">• {step.path}</span>}
+                        </div>
+                        <span className="text-[11px] uppercase tracking-[0.14em] text-slate-400">#{step.id}</span>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5 h-2 w-2 rounded-full bg-indigo-400 shadow-[0_0_0_3px_rgba(99,102,241,0.15)]" />
+                        <div className="space-y-1">
+                          <p className="text-sm font-semibold text-white">{step.title}</p>
+                          <p className="text-xs leading-relaxed text-slate-300">{step.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
-          {/* Messages Section */}
           {messages.length > 0 && (
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium text-gray-400 uppercase tracking-wide">Conversation</h3>
-              {messages.map((message, index) => (
-                <div
-                  key={index}
-                  className={`flex items-start space-x-3 ${
-                    message.role === 'user' ? 'flex-row-reverse space-x-reverse' : ''
-                  }`}
-                >
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    message.role === 'user' 
-                      ? 'bg-indigo-500' 
-                      : 'bg-gradient-to-r from-purple-500 to-indigo-500'
-                  }`}>
-                    {message.role === 'user' ? (
-                      <User className="w-4 h-4 text-white" />
-                    ) : (
-                      <Bot className="w-4 h-4 text-white" />
-                    )}
-                  </div>
-                  <div className={`flex-1 ${message.role === 'user' ? 'text-right' : ''}`}>
-                    <div className={`inline-block px-3 py-2 rounded-lg max-w-xs lg:max-w-sm ${
-                      message.role === 'user'
-                        ? 'bg-indigo-500 text-white'
-                        : 'bg-gray-800 text-gray-100'
-                    }`}>
-                      <p className="text-sm">{message.content}</p>
-                    </div>
-                  </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">Conversation</p>
+                  <h3 className="text-base font-semibold text-white">Live collaboration</h3>
                 </div>
-              ))}
+                <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-slate-200">{messages.length} messages</span>
+              </div>
+
+              <div className="space-y-2">
+                {messages.map((message, index) => {
+                  const isUser = message.role === 'user';
+                  return (
+                    <div
+                      key={index}
+                      className={`flex gap-3 ${isUser ? 'flex-row-reverse text-right' : ''}`}
+                    >
+                      <div
+                        className={`h-10 w-10 rounded-2xl flex items-center justify-center shadow-inner ${
+                          isUser
+                            ? 'bg-gradient-to-br from-indigo-500 to-purple-500 text-white'
+                            : 'bg-white/10 text-indigo-100'
+                        }`}
+                      >
+                        {isUser ? <User className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
+                      </div>
+                      <div className={`flex-1 max-w-full ${isUser ? 'items-end' : 'items-start'} flex`}>
+                        <div
+                          className={`w-full rounded-2xl border border-white/5 px-4 py-3 shadow-md backdrop-blur-sm ${
+                            isUser
+                              ? 'bg-gradient-to-br from-indigo-600/90 to-purple-600/90 text-white'
+                              : 'bg-slate-900/70 text-slate-100'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.14em] text-slate-300 mb-1">
+                            <span className="font-semibold text-white/80">{isUser ? 'You' : 'Bolt'}</span>
+                          </div>
+                          <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
 
-        {/* Input */}
         {(loading || !templateSet) && <Loader />}
-        <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-800">
-          <div className="flex items-center space-x-2">
+        <form onSubmit={handleSendMessage} className="p-4 border-t border-white/5 bg-slate-900/70 backdrop-blur">
+          <div className="flex items-center gap-2">
             <input
               type="text"
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder="Ask Bolt to make changes..."
-              className="flex-1 bg-gray-800 text-white placeholder-gray-400 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="flex-1 bg-white/5 text-white placeholder-slate-400 px-3 py-3 rounded-xl border border-white/5 focus:outline-none focus:ring-2 focus:ring-indigo-500/80"
             />
             <button
               type="submit"
               disabled={!newMessage.trim()}
-              className="bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed text-white p-2 rounded-lg transition-colors"
+              className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white p-3 rounded-xl transition-all shadow-lg shadow-indigo-500/30"
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-5 h-5" />
             </button>
           </div>
         </form>
