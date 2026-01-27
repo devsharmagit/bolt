@@ -23,7 +23,7 @@ export async function templateAction(prompt: string) {
       contents: [{ role: "user", parts: [{ text: prompt }] }]
     });
 
-    const answer = response.text.trim();
+    const answer = response?.text?.trim() || '';
     console.log(answer);
 
     // react or node
