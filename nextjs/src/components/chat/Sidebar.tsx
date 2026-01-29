@@ -1,6 +1,6 @@
 'use client';
 import { useMemo, useState } from 'react';
-import { Send, User, Bot, CheckCircle2, Clock3, Loader2, Sparkles, ListTree } from 'lucide-react';
+import { Send, User, CheckCircle2, Clock3, Loader2, Sparkles, ListTree } from 'lucide-react';
 import { LlmMessage } from '@/types/chat.type';
 import { Step } from '@/types/file.type';
 import { Loader } from '../ui/Loader';
@@ -15,6 +15,10 @@ interface SidebarProps {
 
 export default function Sidebar({ messages, steps, handleSend, loading, templateSet }: SidebarProps) {
   const [newMessage, setNewMessage] = useState('');
+
+  const userMessages = useMemo(() => messages.filter((m) => m.role === 'user'), [messages]);
+
+  const completedSteps = useMemo(() => steps.filter((s) => s.status === 'completed'), [steps]);
 
   const stepStats = useMemo(() => {
     const total = steps.length;
@@ -70,13 +74,23 @@ export default function Sidebar({ messages, steps, handleSend, loading, template
                   <h3 className="text-base font-semibold text-white">Flow overview</h3>
                 </div>
                 <div className="flex items-center gap-2 text-xs">
-                  <span className="px-2 py-1 rounded-full bg-white/5 text-slate-200">{stepStats.inProgress} in flight</span>
-                  <span className="px-2 py-1 rounded-full bg-white/5 text-slate-200">{stepStats.pending} queued</span>
+                  {loading && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500/10 px-2 py-1 text-indigo-200 ring-1 ring-indigo-400/30">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      generating
+                    </span>
+                  )}
+                  <span className="px-2 py-1 rounded-full bg-white/5 text-slate-200">{stepStats.completed} done</span>
                 </div>
               </div>
 
               <div className="space-y-3">
-                {steps.map((step) => (
+                {completedSteps.length === 0 ? (
+                  <div className="rounded-xl border border-white/5 bg-white/5 px-4 py-3 text-sm text-slate-300">
+                    No completed steps yet.
+                  </div>
+                ) : (
+                  completedSteps.map((step) => (
                   <div
                     key={step.id}
                     className="group relative overflow-hidden rounded-xl border border-white/5 bg-white/5 backdrop-blur-sm transition hover:border-indigo-400/40 hover:bg-indigo-500/5"
@@ -104,53 +118,46 @@ export default function Sidebar({ messages, steps, handleSend, loading, template
                       </div>
                     </div>
                   </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           )}
 
-          {messages.length > 0 && (
+          {userMessages.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">Conversation</p>
-                  <h3 className="text-base font-semibold text-white">Live collaboration</h3>
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-slate-400">Prompts</p>
+                  <h3 className="text-base font-semibold text-white">What you asked for</h3>
                 </div>
-                <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-slate-200">{messages.length} messages</span>
+                <span className="rounded-full bg-white/5 px-3 py-1 text-xs text-slate-200">{userMessages.length} messages</span>
               </div>
 
               <div className="space-y-2">
-                {messages.map((message, index) => {
-                  const isUser = message.role === 'user';
+                {userMessages.map((message, index) => {
+                  const isLast = index === userMessages.length - 1;
+                  const showGenerating = isLast && (loading || !templateSet);
                   return (
-                    <div
-                      key={index}
-                      className={`flex gap-3 ${isUser ? 'flex-row-reverse text-right' : ''}`}
-                    >
-                      <div
-                        className={`h-10 w-10 rounded-2xl flex items-center justify-center shadow-inner ${
-                          isUser
-                            ? 'bg-gradient-to-br from-indigo-500 to-purple-500 text-white'
-                            : 'bg-white/10 text-indigo-100'
-                        }`}
-                      >
-                        {isUser ? <User className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
-                      </div>
-                      <div className={`flex-1 max-w-full ${isUser ? 'items-end' : 'items-start'} flex`}>
-                        <div
-                          className={`w-full rounded-2xl border border-white/5 px-4 py-3 shadow-md backdrop-blur-sm ${
-                            isUser
-                              ? 'bg-gradient-to-br from-indigo-600/90 to-purple-600/90 text-white'
-                              : 'bg-slate-900/70 text-slate-100'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.14em] text-slate-300 mb-1">
-                            <span className="font-semibold text-white/80">{isUser ? 'You' : 'Bolt'}</span>
-                          </div>
-                          <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                  <div key={index} className="flex gap-3 flex-row-reverse text-right">
+                    <div className="h-10 w-10 rounded-2xl flex items-center justify-center shadow-inner bg-gradient-to-br from-indigo-500 to-purple-500 text-white">
+                      <User className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 max-w-full items-end flex">
+                      <div className="w-full rounded-2xl border border-white/5 px-4 py-3 shadow-md backdrop-blur-sm bg-gradient-to-br from-indigo-600/90 to-purple-600/90 text-white">
+                        <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.14em] text-slate-200/90 mb-1">
+                          <span className="font-semibold">user</span>
                         </div>
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                        {showGenerating && (
+                          <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs text-white/90">
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            <span className="italic">generating</span>
+                          </div>
+                        )}
                       </div>
                     </div>
+                  </div>
                   );
                 })}
               </div>
