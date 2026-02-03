@@ -51,13 +51,14 @@ export default function ChatPage() {
           return updated;
         });
         
-        const userarr: LlmMessage[] = response.prompts.map((p: string) => ({
+        const injectedPrompts: LlmMessage[] = response.prompts.map((p: string) => ({
           role: "user",
-          content: p
+          content: p,
+          displayInChat: false
         }));
-        
+
         setLoading(true);
-        const stepsResponse = await chatAction([...userarr, { role: "user", content: initialPrompt }]);
+        const stepsResponse = await chatAction([...injectedPrompts, { role: "user", content: initialPrompt, displayInChat: true }]);
         setLoading(false);
         
         if (stepsResponse?.response) {
@@ -71,8 +72,8 @@ export default function ChatPage() {
           });
 
           setLlmMessages([
-            ...userarr,
-            { role: "user", content: initialPrompt }
+            ...injectedPrompts,
+            { role: "user", content: initialPrompt, displayInChat: true }
           ]);
 
           setLlmMessages(x => [...x, { role: "assistant", content: responseText }]);
@@ -221,7 +222,7 @@ export default function ChatPage() {
 
   const handleSend = async (prompt: string) => {
     setLoading(true);
-    const stepsResponse = await chatAction([...llmMessages, { role: "user", content: prompt }]);
+    const stepsResponse = await chatAction([...llmMessages, { role: "user", content: prompt, displayInChat: true }]);
     setLoading(false);
 
     if (!stepsResponse?.response) {
@@ -231,7 +232,7 @@ export default function ChatPage() {
 
     const responseText = stepsResponse.response;
 
-    setLlmMessages(x => [...x, { role: "user", content: prompt }]);
+    setLlmMessages(x => [...x, { role: "user", content: prompt, displayInChat: true }]);
     setLlmMessages(x => [...x, {
       role: "assistant",
       content: responseText
