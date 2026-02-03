@@ -12,6 +12,7 @@ import CodeEditor from '@/components/chat/CodeEditor';
 import { Preview } from '@/components/chat/Preview';
 import { sortFileStructure } from '@/lib/file';
 import Navbar from '@/components/chat/Navbar';
+import { Code2, Eye } from 'lucide-react';
 
 
 export default function ChatPage() {
@@ -290,7 +291,10 @@ export default function ChatPage() {
                     : 'text-gray-400 hover:text-white hover:bg-gray-800'
                 }`}
               >
-                Code
+                <span className="inline-flex items-center gap-2">
+                  <Code2 className="w-4 h-4" />
+                  Code
+                </span>
               </button>
               <button
                 onClick={() => setActiveTab('preview')}
@@ -300,7 +304,10 @@ export default function ChatPage() {
                     : 'text-gray-400 hover:text-white hover:bg-gray-800'
                 }`}
               >
-                Preview
+                <span className="inline-flex items-center gap-2">
+                  <Eye className="w-4 h-4" />
+                  Preview
+                </span>
               </button>
             </div>
           </div>
