@@ -31,8 +31,8 @@ export default function FileExplorer({ files, selectedFile, onFileSelect }: File
     return (
       <div key={currentPath}>
         <div
-          className={`flex items-center py-1 px-2 text-sm cursor-pointer hover:bg-gray-800 transition-colors ${
-            isSelected ? 'bg-indigo-500/20 text-indigo-300 border-r-2 border-indigo-500' : 'text-gray-300'
+          className={`flex items-center py-1 px-2 text-sm cursor-pointer hover:bg-gray-900 transition-colors ${
+            isSelected ? 'bg-yellow-300/15 text-yellow-200 border-r-2 border-yellow-300' : 'text-gray-300'
           }`}
           style={{ paddingLeft: `${8 + depth * 16}px` }}
           onClick={() => {
@@ -51,9 +51,9 @@ export default function FileExplorer({ files, selectedFile, onFileSelect }: File
                 <ChevronRight className="w-4 h-4 mr-1 text-gray-500" />
               )}
               {isExpanded ? (
-                <FolderOpen className="w-4 h-4 mr-2 text-blue-400" />
+                <FolderOpen className="w-4 h-4 mr-2 text-yellow-300" />
               ) : (
-                <Folder className="w-4 h-4 mr-2 text-blue-400" />
+                <Folder className="w-4 h-4 mr-2 text-yellow-300" />
               )}
               <span>{node.name}</span>
             </>
@@ -76,10 +76,10 @@ export default function FileExplorer({ files, selectedFile, onFileSelect }: File
   };
 
   return (
-    <div className="h-full bg-gray-900 border-l border-gray-800">
-      <div className="p-3 border-b border-gray-800">
+    <div className="h-full bg-gray-950 border-l border-yellow-300/20">
+      <div className="p-3 border-b border-yellow-300/20">
         <h3 className="text-sm font-medium text-gray-300 flex items-center">
-          <Folder className="w-4 h-4 mr-2 text-blue-400" />
+          <Folder className="w-4 h-4 mr-2 text-yellow-300" />
           Files
         </h3>
       </div>

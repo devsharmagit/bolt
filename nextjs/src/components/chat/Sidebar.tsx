@@ -83,7 +83,7 @@ export default function Sidebar({ messages, steps, handleSend, loading, template
   };
 
   return (
-    <div className="h-full flex flex-col text-slate-100" style={{ backgroundColor: 'rgb(16, 24, 40)' }}>
+    <div className="h-full flex flex-col text-slate-100 bg-gray-950">
       {/* Timeline Chat */}
       <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5" ref={scrollRef}>
         {timeline.length === 0 ? (
@@ -97,10 +97,10 @@ export default function Sidebar({ messages, steps, handleSend, loading, template
               return (
                 <div key={`msg-${idx}`} className="flex justify-end">
                   <div className="flex gap-2 max-w-xs">
-                    <div className="flex-1 rounded-lg px-4 py-2 text-sm leading-relaxed bg-indigo-600/40 text-slate-100 border border-indigo-500/30">
+                    <div className="flex-1 rounded-lg px-4 py-2 text-sm leading-relaxed bg-yellow-300/15 text-slate-100 border border-yellow-300/30">
                       {message.content}
                     </div>
-                    <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-500 text-white flex-shrink-0 mt-auto">
+                    <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-gradient-to-br from-yellow-300 to-yellow-400 text-gray-950 flex-shrink-0 mt-auto">
                       <User className="w-4 h-4" />
                     </div>
                   </div>
@@ -120,7 +120,7 @@ export default function Sidebar({ messages, steps, handleSend, loading, template
                       {isCompleted ? (
                         <CheckCircle2 className="h-5 w-5 text-emerald-500/70" />
                       ) : isInProgress ? (
-                        <Loader2 className="h-5 w-5 text-amber-500/70 animate-spin" />
+                        <Loader2 className="h-5 w-5 text-yellow-300 animate-spin" />
                       ) : (
                         <div className="h-5 w-5 rounded-full border border-slate-500/50 border-t-slate-300" />
                       )}
@@ -141,11 +141,11 @@ export default function Sidebar({ messages, steps, handleSend, loading, template
                 <div key={`gen-${idx}`} className="flex justify-start">
                   <div className="flex gap-3 max-w-xs">
                     <div className="flex-shrink-0 mt-0.5">
-                      <Loader2 className="h-5 w-5 text-indigo-500/70 animate-spin" />
+                      <Loader2 className="h-5 w-5 text-yellow-300 animate-spin" />
                     </div>
-                    <div className="flex-1 rounded-lg px-4 py-2.5 text-sm leading-relaxed bg-slate-800/40 text-slate-200 border border-slate-700/50">
+                    <div className="flex-1 rounded-lg px-4 py-2.5 text-sm leading-relaxed bg-gray-900 text-slate-200 border border-yellow-300/30">
                       <div className="flex items-center gap-2">
-                        <Zap className="h-4 w-4 text-indigo-400" />
+                        <Zap className="h-4 w-4 text-yellow-300" />
                         <span>Generating steps...</span>
                       </div>
                     </div>
@@ -160,7 +160,7 @@ export default function Sidebar({ messages, steps, handleSend, loading, template
       </div>
 
       {/* Input Form */}
-      <form onSubmit={handleSendMessage} className="p-4 border-t border-slate-700/50 bg-slate-900/30 backdrop-blur-sm">
+      <form onSubmit={handleSendMessage} className="p-4 border-t border-yellow-300/20 bg-gray-900 backdrop-blur-sm">
         <div className="flex items-center gap-2">
           <input
             type="text"
@@ -168,12 +168,12 @@ export default function Sidebar({ messages, steps, handleSend, loading, template
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Ask Bolt to make changes..."
             disabled={loading}
-            className="flex-1 bg-slate-700/40 text-slate-100 placeholder-slate-500 px-4 py-3 rounded-lg border border-slate-600/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm disabled:opacity-50 disabled:cursor-not-allowed transition"
+            className="flex-1 bg-gray-800 text-slate-100 placeholder-slate-500 px-4 py-3 rounded-lg border border-yellow-300/25 focus:outline-none focus:ring-2 focus:ring-yellow-300/50 text-sm disabled:opacity-50 disabled:cursor-not-allowed transition"
           />
           <button
             type="submit"
             disabled={!newMessage.trim() || loading}
-            className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white p-3 rounded-lg transition-all font-medium"
+            className="bg-yellow-300 hover:bg-yellow-200 disabled:opacity-50 disabled:cursor-not-allowed text-gray-950 p-3 rounded-lg transition-all font-medium"
           >
             <Send className="w-4 h-4" />
           </button>

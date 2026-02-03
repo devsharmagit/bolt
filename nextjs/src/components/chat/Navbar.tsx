@@ -51,11 +51,11 @@ export default function Navbar({ files, isSidebarOpen, onToggleSidebar }: Navbar
   };
 
   return (
-    <nav className="h-14 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-6">
+    <nav className="h-14 bg-gray-950 border-b border-yellow-300/20 flex items-center justify-between px-6">
       <div className="flex items-center gap-4">
         <button
           onClick={onToggleSidebar}
-          className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+          className="p-2 hover:bg-gray-900 rounded-lg transition-colors"
           title={isSidebarOpen ? 'Close sidebar' : 'Open sidebar'}
         >
           <svg
@@ -87,7 +87,7 @@ export default function Navbar({ files, isSidebarOpen, onToggleSidebar }: Navbar
       </div>
       <button
         onClick={handleDownload}
-        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+        className="px-4 py-2 bg-yellow-300 hover:bg-yellow-200 text-gray-950 text-sm font-medium rounded-lg transition-colors"
       >
         Download Source Code
       </button>

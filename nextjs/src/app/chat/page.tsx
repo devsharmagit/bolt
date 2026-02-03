@@ -263,13 +263,13 @@ export default function ChatPage() {
       <div className="flex-1 flex overflow-hidden">
         {/* Chat/Steps Sidebar */}
         {isSidebarOpen && (
-          <div className="w-80 flex-shrink-0 border-r border-gray-800">
+          <div className="w-80 flex-shrink-0 border-r border-yellow-300/20">
             <Sidebar loading={laoding} messages={llmMessages} steps={steps} handleSend={handleSend} templateSet={templateSet} />
           </div>
         )}
 
         {/* File Explorer */}
-        <div className="w-64 flex-shrink-0 border-r border-gray-800">
+        <div className="w-64 flex-shrink-0 border-r border-yellow-300/20">
           <FileExplorer
             files={files}
             selectedFile={selectedFile}
@@ -280,14 +280,14 @@ export default function ChatPage() {
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col">
           {/* Tab Header */}
-          <div className="h-12 bg-gray-800 border-b border-gray-700 flex items-center px-4">
+          <div className="h-12 bg-gray-900 border-b border-yellow-300/20 flex items-center px-4">
             <div className="flex space-x-1">
               <button
                 onClick={() => setActiveTab('code')}
                 className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                   activeTab === 'code'
-                    ? 'bg-gray-700 text-white'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
+                    ? 'bg-yellow-300 text-gray-950'
+                    : 'text-gray-400 hover:text-white hover:bg-gray-800'
                 }`}
               >
                 Code
@@ -296,8 +296,8 @@ export default function ChatPage() {
                 onClick={() => setActiveTab('preview')}
                 className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                   activeTab === 'preview'
-                    ? 'bg-gray-700 text-white'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
+                    ? 'bg-yellow-300 text-gray-950'
+                    : 'text-gray-400 hover:text-white hover:bg-gray-800'
                 }`}
               >
                 Preview

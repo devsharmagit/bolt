@@ -32,13 +32,13 @@ export default function CodeEditor({ selectedFile, content }: CodeEditorProps) {
   };
 
   return (
-    <div className="h-full bg-gray-900">
+    <div className="h-full bg-gray-950">
       {/* Header */}
-      <div className="h-12 bg-gray-800 border-b border-gray-700 flex items-center px-4">
+      <div className="h-12 bg-gray-900 border-b border-yellow-300/20 flex items-center px-4">
         <div className="flex items-center space-x-2">
-          <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-          <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-          <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+          <div className="w-3 h-3 bg-gray-600 rounded-full"></div>
+          <div className="w-3 h-3 bg-gray-600 rounded-full"></div>
+          <div className="w-3 h-3 bg-yellow-300 rounded-full"></div>
         </div>
         <div className="flex-1 text-center">
           <span className="text-sm text-gray-300">{selectedFile}</span>
