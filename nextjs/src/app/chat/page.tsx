@@ -11,6 +11,7 @@ import FileExplorer from '@/components/chat/FileExplorer';
 import CodeEditor from '@/components/chat/CodeEditor';
 import { Preview } from '@/components/chat/Preview';
 import { sortFileStructure } from '@/lib/file';
+import Navbar from '@/components/chat/Navbar';
 
 
 export default function ChatPage() {
@@ -28,6 +29,7 @@ export default function ChatPage() {
   const [steps, setSteps] = useState<Step[]>([]);
   const [selectedFile, setSelectedFile] = useState<string>('src/App.tsx');
   const [activeTab, setActiveTab] = useState<'code' | 'preview'>('code');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const [files, setFiles] = useState<FileItem[]>([]);
 
@@ -253,61 +255,68 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="h-screen flex bg-gray-950 text-white overflow-hidden">
-      {/* Chat/Steps Sidebar */}
-      <div className="w-80 flex-shrink-0 border-r border-gray-800">
-        <Sidebar loading={laoding} messages={llmMessages} steps={steps} handleSend={handleSend} templateSet={templateSet} />
-      </div>
-
-      {/* File Explorer */}
-      <div className="w-64 flex-shrink-0 border-r border-gray-800">
-        <FileExplorer
-          files={files}
-          selectedFile={selectedFile}
-          onFileSelect={setSelectedFile}
-        />
-      </div>
-
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col">
-        {/* Tab Header */}
-        <div className="h-12 bg-gray-800 border-b border-gray-700 flex items-center px-4">
-          <div className="flex space-x-1">
-            <button
-              onClick={() => setActiveTab('code')}
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                activeTab === 'code'
-                  ? 'bg-gray-700 text-white'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
-              }`}
-            >
-              Code
-            </button>
-            <button
-              onClick={() => setActiveTab('preview')}
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                activeTab === 'preview'
-                  ? 'bg-gray-700 text-white'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
-              }`}
-            >
-              Preview
-            </button>
+    <div className="h-screen flex flex-col bg-gray-950 text-white overflow-hidden">
+      {/* Navbar */}
+      <Navbar files={files} isSidebarOpen={isSidebarOpen} onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
+      
+      {/* Main Content */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Chat/Steps Sidebar */}
+        {isSidebarOpen && (
+          <div className="w-80 flex-shrink-0 border-r border-gray-800">
+            <Sidebar loading={laoding} messages={llmMessages} steps={steps} handleSend={handleSend} templateSet={templateSet} />
           </div>
+        )}
+
+        {/* File Explorer */}
+        <div className="w-64 flex-shrink-0 border-r border-gray-800">
+          <FileExplorer
+            files={files}
+            selectedFile={selectedFile}
+            onFileSelect={setSelectedFile}
+          />
         </div>
 
-        {/* Tab Content */}
-        <div className="flex-1">
-          {activeTab === 'code' ? (
-            <CodeEditor
-              selectedFile={selectedFile}
-              content={getFileContent(selectedFile)}
-            />
-          ) : (
-            webcontainer && <Preview files={files} webContainer={webcontainer} />
-          )}
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col">
+          {/* Tab Header */}
+          <div className="h-12 bg-gray-800 border-b border-gray-700 flex items-center px-4">
+            <div className="flex space-x-1">
+              <button
+                onClick={() => setActiveTab('code')}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  activeTab === 'code'
+                    ? 'bg-gray-700 text-white'
+                    : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
+                }`}
+              >
+                Code
+              </button>
+              <button
+                onClick={() => setActiveTab('preview')}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  activeTab === 'preview'
+                    ? 'bg-gray-700 text-white'
+                    : 'text-gray-400 hover:text-white hover:bg-gray-700/50'
+                }`}
+              >
+                Preview
+              </button>
+            </div>
+          </div>
+
+          {/* Tab Content */}
+          <div className="flex-1">
+            {activeTab === 'code' ? (
+              <CodeEditor
+                selectedFile={selectedFile}
+                content={getFileContent(selectedFile)}
+              />
+            ) : (
+              webcontainer && <Preview files={files} webContainer={webcontainer} />
+            )}
+          </div>
         </div>
       </div>
     </div>
-  );
-}
+  )};
