@@ -53,7 +53,7 @@ export default function ChatPage() {
           const updated = [...prev, ...firstSteps];
           return updated;
         });
-        
+
         const injectedPrompts: LlmMessage[] = response.prompts.map((p: string) => ({
           role: "user",
           content: p,
@@ -61,12 +61,15 @@ export default function ChatPage() {
         }));
 
         setLoading(true);
-        const stepsResponse = await chatAction([...injectedPrompts, { role: "user", content: initialPrompt, displayInChat: true }]);
+        const stepsResponse = await chatAction([
+          ...injectedPrompts,
+          { role: "user", content: initialPrompt, displayInChat: true }
+        ]);
         setLoading(false);
-        
+
         if (stepsResponse?.response) {
           const responseText = stepsResponse.response;
-          
+
           // Calculate next available ID from current steps
           setSteps((prevSteps) => {
             const maxId = prevSteps.length > 0 ? Math.max(...prevSteps.map(s => s.id)) : 0;
@@ -74,12 +77,11 @@ export default function ChatPage() {
             return [...prevSteps, ...parsedSteps];
           });
 
+          // Always show the initialPrompt as the first user message in the chat timeline
           setLlmMessages([
-            ...injectedPrompts,
-            { role: "user", content: initialPrompt, displayInChat: true }
+            { role: "user", content: initialPrompt, displayInChat: true },
+            { role: "assistant", content: responseText }
           ]);
-
-          setLlmMessages(x => [...x, { role: "assistant", content: responseText }]);
         }
       }
     };
@@ -225,7 +227,10 @@ export default function ChatPage() {
 
   const handleSend = async (prompt: string) => {
     setLoading(true);
-    const stepsResponse = await chatAction([...llmMessages, { role: "user", content: prompt, displayInChat: true }]);
+    const stepsResponse = await chatAction([
+      ...llmMessages.filter(m => m.displayInChat !== false),
+      { role: "user", content: prompt, displayInChat: true }
+    ]);
     setLoading(false);
 
     if (!stepsResponse?.response) {
@@ -235,11 +240,11 @@ export default function ChatPage() {
 
     const responseText = stepsResponse.response;
 
-    setLlmMessages(x => [...x, { role: "user", content: prompt, displayInChat: true }]);
-    setLlmMessages(x => [...x, {
-      role: "assistant",
-      content: responseText
-    }]);
+    setLlmMessages(x => [
+      ...x,
+      { role: "user", content: prompt, displayInChat: true },
+      { role: "assistant", content: responseText }
+    ]);
 
     setSteps(s => {
       // Calculate the next available ID
@@ -313,15 +318,24 @@ export default function ChatPage() {
           </div>
 
           {/* Tab Content */}
-          <div className="flex-1">
-            {activeTab === 'code' ? (
+          <div className="flex-1 relative">
+            <div
+              className={
+                `absolute inset-0 transition-opacity duration-200 ${activeTab === 'code' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`
+              }
+            >
               <CodeEditor
                 selectedFile={selectedFile}
                 content={getFileContent(selectedFile)}
               />
-            ) : (
-              webcontainer && <Preview files={files} webContainer={webcontainer} />
-            )}
+            </div>
+            <div
+              className={
+                `absolute inset-0 transition-opacity duration-200 ${activeTab === 'preview' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`
+              }
+            >
+              {webcontainer && <Preview files={files} webContainer={webcontainer} />}
+            </div>
           </div>
         </div>
       </div>

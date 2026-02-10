@@ -20,7 +20,6 @@ interface TimelineItem {
 
 export default function Sidebar({ messages, steps, handleSend, loading, templateSet }: SidebarProps) {
   const [newMessage, setNewMessage] = useState('');
-  const [streamingText, setStreamingText] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const userMessages = useMemo(
@@ -78,7 +77,6 @@ export default function Sidebar({ messages, steps, handleSend, loading, template
     if (newMessage.trim()) {
       await handleSend(newMessage);
       setNewMessage('');
-      setStreamingText('');
     }
   };
 
@@ -88,7 +86,7 @@ export default function Sidebar({ messages, steps, handleSend, loading, template
       <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5" ref={scrollRef}>
         {timeline.length === 0 ? (
           <div className="flex items-center justify-center h-full text-slate-400 text-sm">
-            Start by typing a message...
+            Generating Steps...
           </div>
         ) : (
           timeline.map((item, idx) => {
