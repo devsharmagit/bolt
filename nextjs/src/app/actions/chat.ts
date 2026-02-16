@@ -2,6 +2,7 @@
 
 import { GoogleGenAI } from "@google/genai";
 import { getSystemPrompt } from '@/lib/prompt';
+import { CHAT_PROMPT_LIMIT, checkAndConsumeChatRateLimit } from '@/lib/rate-limit';
 
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || "";
 
@@ -16,10 +17,24 @@ interface Message {
   content: string;
 }
 
-export async function chatAction(messages: Message[]) {
+type ChatActionResponse = {
+  response: string;
+  remainingPrompts: number | null;
+  limit: number;
+  error?: string;
+};
+
+export async function chatAction(messages: Message[]): Promise<ChatActionResponse> {
   try {
-    console.log("inside the chat action");
-    console.log(messages);
+    const rateLimit = await checkAndConsumeChatRateLimit();
+    if (!rateLimit.success) {
+      return {
+        response: '',
+        remainingPrompts: rateLimit.remaining,
+        limit: rateLimit.limit,
+        error: rateLimit.error
+      };
+    }
     
     const aiMessages = messages.map((message) => {
       return {
@@ -36,10 +51,10 @@ export async function chatAction(messages: Message[]) {
       contents: aiMessages
     });
 
-    console.log(response);
-
     return {
-      response: response.text
+      response: response.text ?? "",
+      remainingPrompts: rateLimit.remaining,
+      limit: CHAT_PROMPT_LIMIT
     };
   } catch (error) {
     console.error('Error in chatAction:', error);

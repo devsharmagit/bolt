@@ -1,6 +1,7 @@
 'use client';
 import { FileItem } from '@/types/file.type';
 import JSZip from 'jszip';
+import Link from 'next/link';
 
 interface NavbarProps {
   files: FileItem[];
@@ -81,9 +82,9 @@ export default function Navbar({ files, isSidebarOpen, onToggleSidebar }: Navbar
             )}
           </svg>
         </button>
-        <div className="text-xl font-bold text-white">
+        <Link href="/" className="text-xl font-bold text-white hover:text-yellow-200 transition-colors">
           Bolt
-        </div>
+        </Link>
       </div>
       <button
         onClick={handleDownload}

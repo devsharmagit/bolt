@@ -7,18 +7,26 @@ import { Step } from '@/types/file.type';
 interface SidebarProps {
   messages: LlmMessage[];
   steps: Step[];
-  handleSend: (prompt: string) => void;
+  handleSend: (prompt: string) => Promise<void>;
   loading: boolean;
-  templateSet: boolean;
+  remainingPrompts: number | null;
+  rateLimitMessage: string | null;
 }
 
 interface TimelineItem {
   type: 'message' | 'step' | 'generating';
   timestamp: number;
-  data?: any;
+  data?: LlmMessage | Step | null;
 }
 
-export default function Sidebar({ messages, steps, handleSend, loading, templateSet }: SidebarProps) {
+export default function Sidebar({
+  messages,
+  steps,
+  handleSend,
+  loading,
+  remainingPrompts,
+  rateLimitMessage
+}: SidebarProps) {
   const [newMessage, setNewMessage] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -82,6 +90,17 @@ export default function Sidebar({ messages, steps, handleSend, loading, template
 
   return (
     <div className="h-full flex flex-col text-slate-100 bg-gray-950">
+      <div className="px-6 pt-4 pb-2 border-b border-yellow-300/15">
+        <p className="text-xs text-slate-300">
+          {remainingPrompts === null
+            ? 'Prompts left: unavailable'
+            : `Prompts left: ${remainingPrompts}/3`}
+        </p>
+        {rateLimitMessage && (
+          <p className="text-xs text-rose-300 mt-1">{rateLimitMessage}</p>
+        )}
+      </div>
+
       {/* Timeline Chat */}
       <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5" ref={scrollRef}>
         {timeline.length === 0 ? (
@@ -165,12 +184,12 @@ export default function Sidebar({ messages, steps, handleSend, loading, template
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Ask Bolt to make changes..."
-            disabled={loading}
+            disabled={loading || remainingPrompts === 0}
             className="flex-1 bg-gray-800 text-slate-100 placeholder-slate-500 px-4 py-3 rounded-lg border border-yellow-300/25 focus:outline-none focus:ring-2 focus:ring-yellow-300/50 text-sm disabled:opacity-50 disabled:cursor-not-allowed transition"
           />
           <button
             type="submit"
-            disabled={!newMessage.trim() || loading}
+            disabled={!newMessage.trim() || loading || remainingPrompts === 0}
             className="bg-yellow-300 hover:bg-yellow-200 disabled:opacity-50 disabled:cursor-not-allowed text-gray-950 p-3 rounded-lg transition-all font-medium"
           >
             <Send className="w-4 h-4" />

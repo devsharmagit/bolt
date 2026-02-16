@@ -19,7 +19,8 @@ export default function ChatPage() {
   const [initialPrompt, setInitialPrompt] = useState('');
 
   const [laoding, setLoading] = useState(false);
-  const [templateSet, setTemplateSet] = useState(false);
+  const [remainingPrompts, setRemainingPrompts] = useState<number | null>(null);
+  const [rateLimitMessage, setRateLimitMessage] = useState<string | null>(null);
 
   const [llmMessages, setLlmMessages] = useState<LlmMessage[]>([]);
 
@@ -45,7 +46,6 @@ export default function ChatPage() {
   useEffect(() => {
     const init = async (initialPrompt: string) => {
       const response = await templateAction(initialPrompt);
-      setTemplateSet(true);
       if (response?.prompts && response.uiPrompts) {
         // Start with ID 1 for the first call
         const firstSteps = parseXml(response.uiPrompts[0], 1);
@@ -66,6 +66,13 @@ export default function ChatPage() {
           { role: "user", content: initialPrompt, displayInChat: true }
         ]);
         setLoading(false);
+        setRemainingPrompts(stepsResponse.remainingPrompts);
+
+        if (stepsResponse.error) {
+          setRateLimitMessage(stepsResponse.error);
+          return;
+        }
+        setRateLimitMessage(null);
 
         if (stepsResponse?.response) {
           const responseText = stepsResponse.response;
@@ -232,6 +239,13 @@ export default function ChatPage() {
       { role: "user", content: prompt, displayInChat: true }
     ]);
     setLoading(false);
+    setRemainingPrompts(stepsResponse.remainingPrompts);
+
+    if (stepsResponse.error) {
+      setRateLimitMessage(stepsResponse.error);
+      return;
+    }
+    setRateLimitMessage(null);
 
     if (!stepsResponse?.response) {
       console.error('No response from chat action');
@@ -270,7 +284,14 @@ export default function ChatPage() {
         {/* Chat/Steps Sidebar */}
         {isSidebarOpen && (
           <div className="w-80 flex-shrink-0 border-r border-yellow-300/20">
-            <Sidebar loading={laoding} messages={llmMessages} steps={steps} handleSend={handleSend} templateSet={templateSet} />
+            <Sidebar
+              loading={laoding}
+              messages={llmMessages}
+              steps={steps}
+              handleSend={handleSend}
+              remainingPrompts={remainingPrompts}
+              rateLimitMessage={rateLimitMessage}
+            />
           </div>
         )}
 
