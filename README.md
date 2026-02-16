@@ -42,8 +42,6 @@ Bolt is an AI-powered development assistant that turns natural language descript
 ![unnamed](https://github.com/user-attachments/assets/f5fee310-ddc5-412e-a4d7-745b1c80aece)
 
 
-> **Diagram coming soon** - See section below on creating the architecture diagram
-
 ## ⚡ Quick Start
 
 ### Prerequisites
