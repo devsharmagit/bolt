@@ -116,60 +116,88 @@ export default function ChatPage() {
   }, [isSidebarOpen, showToast, currentSessionId]);
 
   useEffect(() => {
+    // Only run if we have an initialPrompt and haven't already processed it
+    if (!initialPrompt || llmMessages.length > 0) {
+      return;
+    }
+
     const init = async (initialPrompt: string) => {
-      const response = await templateAction(initialPrompt);
-      if (response?.prompts && response.uiPrompts) {
-        // Start with ID 1 for the first call
-        const firstSteps = parseXml(response.uiPrompts[0], 1);
-        setSteps((prev) => {
-          const updated = [...prev, ...firstSteps];
-          return updated;
-        });
-
-        const injectedPrompts: LlmMessage[] = response.prompts.map((p: string) => ({
-          role: "user",
-          content: p,
-          displayInChat: false
-        }));
-
-        setLoading(true);
-        const stepsResponse = await chatAction([
-          ...injectedPrompts,
-          { role: "user", content: initialPrompt, displayInChat: true }
-        ]);
-        setLoading(false);
-        setRemainingPrompts(stepsResponse.remainingPrompts);
-
-        if (stepsResponse.error) {
-          setRateLimitMessage(stepsResponse.error);
-          showToast(stepsResponse.error, 'error');
-          return;
-        }
-        setRateLimitMessage(null);
-        showToast('Project generated successfully!', 'success');
-
-        if (stepsResponse?.response) {
-          const responseText = stepsResponse.response;
-
-          // Calculate next available ID from current steps
-          setSteps((prevSteps) => {
-            const maxId = prevSteps.length > 0 ? Math.max(...prevSteps.map(s => s.id)) : 0;
-            const parsedSteps = parseXml(responseText, maxId + 1);
-            return [...prevSteps, ...parsedSteps];
+      try {
+        const response = await templateAction(initialPrompt);
+        if (response?.prompts && response.uiPrompts) {
+          // Start with ID 1 for the first call
+          const firstSteps = parseXml(response.uiPrompts[0], 1);
+          setSteps((prev) => {
+            const updated = [...prev, ...firstSteps];
+            return updated;
           });
 
-          // Always show the initialPrompt as the first user message in the chat timeline
-          setLlmMessages([
-            { role: "user", content: initialPrompt, displayInChat: true },
-            { role: "assistant", content: responseText }
-          ]);
+          const injectedPrompts: LlmMessage[] = response.prompts.map((p: string) => ({
+            role: "user",
+            content: p,
+            displayInChat: false
+          }));
+
+          setLoading(true);
+          try {
+            const stepsResponse = await chatAction([
+              ...injectedPrompts,
+              { role: "user", content: initialPrompt, displayInChat: true }
+            ]);
+            setLoading(false);
+            setRemainingPrompts(stepsResponse.remainingPrompts);
+
+            if (stepsResponse.error) {
+              setRateLimitMessage(stepsResponse.error);
+              showToast(stepsResponse.error, 'error');
+              // Add user message to history even on error to prevent retries
+              setLlmMessages([
+                { role: "user", content: initialPrompt, displayInChat: true }
+              ]);
+              return;
+            }
+            setRateLimitMessage(null);
+            showToast('Project generated successfully!', 'success');
+
+            if (stepsResponse?.response) {
+              const responseText = stepsResponse.response;
+
+              // Calculate next available ID from current steps
+              setSteps((prevSteps) => {
+                const maxId = prevSteps.length > 0 ? Math.max(...prevSteps.map(s => s.id)) : 0;
+                const parsedSteps = parseXml(responseText, maxId + 1);
+                return [...prevSteps, ...parsedSteps];
+              });
+
+              // Always show the initialPrompt as the first user message in the chat timeline
+              setLlmMessages([
+                { role: "user", content: initialPrompt, displayInChat: true },
+                { role: "assistant", content: responseText }
+              ]);
+            }
+          } catch (error) {
+            setLoading(false);
+            showToast('Failed to generate response. Please try again.', 'error');
+            console.error('Error in chatAction:', error);
+            // Add user message to history to prevent retries
+            setLlmMessages([
+              { role: "user", content: initialPrompt, displayInChat: true }
+            ]);
+          }
         }
+      } catch (error) {
+        setLoading(false);
+        showToast('Failed to initialize chat. Please try again.', 'error');
+        console.error('Error in init:', error);
+        // Add user message to history to prevent retries
+        setLlmMessages([
+          { role: "user", content: initialPrompt, displayInChat: true }
+        ]);
       }
     };
-    if (initialPrompt) {
-      init(initialPrompt);
-    }
-  }, [initialPrompt, showToast]);
+    
+    init(initialPrompt);
+  }, [initialPrompt, llmMessages.length, showToast]);
 
   useEffect(() => {
     const pendingSteps = steps.filter(({ status }) => status === "pending");
@@ -319,6 +347,11 @@ export default function ChatPage() {
       if (stepsResponse.error) {
         setRateLimitMessage(stepsResponse.error);
         showToast(stepsResponse.error, 'error');
+        // Add user message to history even on error
+        setLlmMessages(x => [
+          ...x,
+          { role: "user", content: prompt, displayInChat: true }
+        ]);
         return;
       }
       setRateLimitMessage(null);
@@ -326,6 +359,11 @@ export default function ChatPage() {
       if (!stepsResponse?.response) {
         showToast('No response from AI. Please try again.', 'error');
         console.error('No response from chat action');
+        // Add user message to history even on error
+        setLlmMessages(x => [
+          ...x,
+          { role: "user", content: prompt, displayInChat: true }
+        ]);
         return;
       }
 
@@ -355,6 +393,11 @@ export default function ChatPage() {
       setLoading(false);
       showToast('An error occurred. Please try again.', 'error');
       console.error('Error in handleSend:', error);
+      // Add user message to history even on error
+      setLlmMessages(x => [
+        ...x,
+        { role: "user", content: prompt, displayInChat: true }
+      ]);
     }
   };
 
