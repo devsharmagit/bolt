@@ -39,10 +39,8 @@ Bolt is an AI-powered development assistant that turns natural language descript
 
 ### Architecture
 
-<!-- 
-🎨 EXCALIDRAW DIAGRAM PLACEHOLDER
-Add your architecture diagram here 
--->
+![unnamed](https://github.com/user-attachments/assets/f5fee310-ddc5-412e-a4d7-745b1c80aece)
+
 
 > **Diagram coming soon** - See section below on creating the architecture diagram
 
