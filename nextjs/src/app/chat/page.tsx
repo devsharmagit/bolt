@@ -19,6 +19,7 @@ import { chatStorage } from '@/lib/localStorage';
 
 export default function ChatPage() {
   const [initialPrompt, setInitialPrompt] = useState('');
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [remainingPrompts, setRemainingPrompts] = useState<number | null>(null);
@@ -38,27 +39,45 @@ export default function ChatPage() {
 
   const [files, setFiles] = useState<FileItem[]>([]);
 
-  // Load initial prompt from sessionStorage
+  // Load session on mount
   useEffect(() => {
+    const sessionId = chatStorage.getCurrentSessionId();
     const prompt = chatStorage.loadInitialPrompt();
-    if (prompt) {
-      setInitialPrompt(prompt);
+    
+    if (sessionId) {
+      // Load existing session
+      const session = chatStorage.getSession(sessionId);
+      if (session) {
+        setCurrentSessionId(sessionId);
+        setInitialPrompt(session.initialPrompt);
+        setLlmMessages(session.messages);
+        setSteps(session.steps);
+        setFiles(session.files);
+        return;
+      }
     }
     
-    // Load chat history from localStorage
-    const savedHistory = chatStorage.loadHistory();
-    if (savedHistory.length > 0) {
-      setLlmMessages(savedHistory);
-      showToast('Chat history restored', 'success');
+    // New session from landing page
+    if (prompt) {
+      setInitialPrompt(prompt);
+      // Session ID should already be set from landing page
+      const currentId = chatStorage.getCurrentSessionId();
+      if (currentId) {
+        setCurrentSessionId(currentId);
+      }
     }
   }, []);
 
-  // Save chat history to localStorage whenever it changes
+  // Save session data whenever it changes
   useEffect(() => {
-    if (llmMessages.length > 0) {
-      chatStorage.saveHistory(llmMessages);
+    if (currentSessionId && (llmMessages.length > 0 || steps.length > 0 || files.length > 0)) {
+      chatStorage.updateSession(currentSessionId, {
+        messages: llmMessages,
+        steps: steps,
+        files: files,
+      });
     }
-  }, [llmMessages]);
+  }, [currentSessionId, llmMessages, steps, files]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -73,27 +92,28 @@ export default function ChatPage() {
       // Cmd+E / Ctrl+E: Toggle between code and preview
       if ((e.metaKey || e.ctrlKey) && e.key === 'e') {
         e.preventDefault();
-        setActiveTab((prev) => {
-          const newTab = prev === 'code' ? 'preview' : 'code';
-          showToast(`Switched to ${newTab}`, 'info');
-          return newTab;
-        });
+        showToast('View toggle shortcut', 'info');
       }
-
-      // Cmd+Shift+C / Ctrl+Shift+C: Clear chat history
+      
+      // Cmd+Shift+C / Ctrl+Shift+C: Clear current chat
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'c') {
         e.preventDefault();
-        if (confirm('Clear chat history? This cannot be undone.')) {
-          chatStorage.clearHistory();
+        if (confirm('Clear current chat? This cannot be undone.')) {
+          if (currentSessionId) {
+            chatStorage.deleteSession(currentSessionId);
+            chatStorage.clearCurrentSession();
+          }
           setLlmMessages([]);
-          showToast('Chat history cleared', 'success');
+          setSteps([]);
+          setFiles([]);
+          showToast('Chat cleared', 'success');
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyboard);
     return () => window.removeEventListener('keydown', handleKeyboard);
-  }, [isSidebarOpen, showToast]);
+  }, [isSidebarOpen, showToast, currentSessionId]);
 
   useEffect(() => {
     const init = async (initialPrompt: string) => {

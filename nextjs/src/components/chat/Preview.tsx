@@ -13,9 +13,9 @@ export function Preview({ files, webContainer }: PreviewProps) {
   const [url, setUrl] = useState<string>('');
   const [logs, setLogs] = useState<string[]>([]);
   const [iframeReady, setIframeReady] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [statusMessage, setStatusMessage] = useState('Starting...');
   const [runtimeErrors, setRuntimeErrors] = useState<string[]>([]);
+  const [statusMessage, setStatusMessage] = useState<string>('');
+  const [progress, setProgress] = useState<number>(0);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -33,21 +33,11 @@ export function Preview({ files, webContainer }: PreviewProps) {
 
     const startPreview = async () => {
       try {
-        setStatusMessage('Installing dependencies...');
-        setProgress(10);
-        setLogs((prev) => [...prev, '📦 Installing dependencies...']);
+setStatusMessage('Installing dependencies...');
+setProgress(10);
+setLogs((prev: string[]) => [...prev, '📦 Installing dependencies...']);
 
-        // Simulate gradual progress during install
-        progressIntervalRef.current = setInterval(() => {
-          setProgress((prev) => {
-            if (prev < 50) {
-              return Math.min(prev + 1, 50);
-            }
-            return prev;
-          });
-        }, 200);
-
-        const installProcess = await webContainer.spawn('npm', ['install']);
+const installProcess = await webContainer.spawn('npm', ['install']);
 
         await installProcess.output.pipeTo(
           new WritableStream({
@@ -56,7 +46,7 @@ export function Preview({ files, webContainer }: PreviewProps) {
               const str = String(data).replace(/\x1b\[[0-9;]*[A-Za-z]/g, '').replace(/\r?\n$/, '');
               // If it's a spinner character, update the last log line in place
               if (/^\s*[-/\\|]\s*$/.test(str)) {
-                setLogs((prev) => {
+                setLogs((prev: string[]) => {
                   if (prev.length === 0) return [str];
                   // If the last log is also a spinner, replace it, else append
                   if (/^\s*[-/\\|]\s*$/.test(prev[prev.length - 1])) {
@@ -68,53 +58,24 @@ export function Preview({ files, webContainer }: PreviewProps) {
                 return;
               }
               if (str.trim() === '') return;
-              setLogs((prev) => [...prev, str]);
+              setLogs((prev: string[]) => [...prev, str]);
             },
           })
         );
 
         await installProcess.exit;
-        
-        // Clear interval and set to 60%
-        if (progressIntervalRef.current) {
-          clearInterval(progressIntervalRef.current);
-        }
-        setProgress(60);
-        setLogs((prev) => [...prev, '✅ Dependencies installed']);
+        setLogs((prev: string[]) => [...prev, '✅ Dependencies installed']);
 
-        setStatusMessage('Starting dev server...');
-        setProgress(70);
-        setLogs((prev) => [...prev, '🚀 Starting dev server...']);
-        
-        // Gradual progress for server start
-        progressIntervalRef.current = setInterval(() => {
-          setProgress((prev) => {
-            if (prev < 85) {
-              return Math.min(prev + 1, 85);
-            }
-            return prev;
-          });
-        }, 300);
-        
+        setLogs((prev: string[]) => [...prev, '🚀 Starting dev server...']);
         await webContainer.spawn('npm', ['run', 'dev']);
 
         // Listen ONCE for server-ready
-        webContainer.on('server-ready', (port, url) => {
-          if (progressIntervalRef.current) {
-            clearInterval(progressIntervalRef.current);
-          }
-          setProgress(100);
-          setStatusMessage('Server ready!');
-          setLogs((prev) => [...prev, `🌍 Server ready at: ${url}`]);
+        webContainer.on('server-ready', (port: number, url: string) => {
+          setLogs((prev: string[]) => [...prev, `🌍 Server ready at: ${url}`]);
           setUrl(url);
         });
       } catch (err) {
-        if (progressIntervalRef.current) {
-          clearInterval(progressIntervalRef.current);
-        }
-        setStatusMessage('Preview failed');
-        setLogs((prev) => [...prev, `❌ Preview failed: ${err}`]);
-        setRuntimeErrors((prev) => [...prev, `Setup Error: ${err}`]);
+        console.error('Error starting preview:', err);
       }
     };
 
@@ -159,13 +120,6 @@ export function Preview({ files, webContainer }: PreviewProps) {
           script.textContent = `
             (function() {
               const originalError = console.error;
-              console.error = function(...args) {
-                window.parent.postMessage({
-                  type: 'error',
-                  message: args.join(' ')
-                }, '*');
-                originalError.apply(console, args);
-              };
               
               window.addEventListener('error', function(event) {
                 window.parent.postMessage({

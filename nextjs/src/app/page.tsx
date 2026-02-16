@@ -2,14 +2,16 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Zap, Sparkles, Code2, Layers } from 'lucide-react';
+import { Zap, Sparkles, Code2, Layers, Clock } from 'lucide-react';
 import { getRateLimitStatusAction } from '@/app/actions/rate-limit';
 import { chatStorage } from '@/lib/localStorage';
+import History from '@/components/chat/History';
 
 export default function LandingPage() {
   const [prompt, setPrompt] = useState('');
   const [remainingPrompts, setRemainingPrompts] = useState<number | null>(null);
   const [rateLimitLoading, setRateLimitLoading] = useState(true);
+  const [showHistory, setShowHistory] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -30,6 +32,11 @@ export default function LandingPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (prompt.trim()) {
+      // Create a new chat session
+      const sessionId = chatStorage.createSession(prompt);
+      if (sessionId) {
+        chatStorage.setCurrentSessionId(sessionId);
+      }
       // Store the prompt using localStorage helper
       chatStorage.saveInitialPrompt(prompt);
       router.push('/chat');
@@ -84,25 +91,33 @@ export default function LandingPage() {
             Bolt
           </span>
         </div>
-        <nav className="hidden md:flex items-center space-x-6 text-sm">
-          <a href="#faq" className="text-zinc-400 hover:text-zinc-100 transition-colors">FAQ</a>
-          <a href="#about" className="text-zinc-400 hover:text-zinc-100 transition-colors">About</a>
+        <nav className="flex items-center space-x-4 text-sm">
+          <button
+            onClick={() => setShowHistory(true)}
+            className="px-3 py-2 bg-gray-900 hover:bg-gray-800 text-gray-300 hover:text-white rounded-lg transition-colors flex items-center gap-2 ring-1 ring-yellow-300/25"
+            title="Chat history"
+          >
+            <Clock className="w-4 h-4" />
+            <span className="hidden sm:inline">History</span>
+          </button>
+          <a href="#faq" className="hidden md:inline text-zinc-400 hover:text-zinc-100 transition-colors">FAQ</a>
+          <a href="#about" className="hidden md:inline text-zinc-400 hover:text-zinc-100 transition-colors">About</a>
         </nav>
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 px-6 py-6">
-        <div className="max-w-4xl mx-auto text-center mb-12 motion-fade-up">
+      <main className="relative z-10 px-6 py-12">
+        <div className="max-w-4xl mx-auto text-center mb-20 motion-fade-up">
           {/* Hero Section */}
-          <div className="mb-8">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-300/10 ring-1 ring-yellow-300/30 mb-6">
+          <div className="mb-12">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-300/10 ring-1 ring-yellow-300/30 mb-8">
               <Sparkles className="w-4 h-4 text-yellow-300" />
               <span className="text-sm text-zinc-200">AI-powered development</span>
             </div>
-            <h1 className="text-5xl md:text-7xl font-semibold tracking-tight mb-6 text-zinc-50">
+            <h1 className="text-5xl md:text-7xl font-semibold tracking-tight mb-8 text-zinc-50">
               Build apps from a prompt
             </h1>
-            <p className="text-lg md:text-xl text-zinc-400 mb-8 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-lg md:text-xl text-zinc-400 mb-10 max-w-2xl mx-auto leading-relaxed">
               An AI assistant that helps you <span className="text-zinc-200">write</span>, <span className="text-zinc-200">run</span>, and <span className="text-zinc-200">iterate</span> on full‑stack web apps—fast.
             </p>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-900 ring-1 ring-yellow-300/25">
@@ -118,7 +133,7 @@ export default function LandingPage() {
           </div>
 
           {/* Prompt Input */}
-          <form onSubmit={handleSubmit} className="w-full max-w-3xl mx-auto mb-8">
+          <form onSubmit={handleSubmit} className="w-full max-w-3xl mx-auto mb-12">
             <div className="relative group">
               <div className="absolute inset-0 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity bg-[radial-gradient(ellipse_at_center,rgba(253,224,71,0.2),transparent_60%)]" />
               <div className="relative bg-gray-900 backdrop-blur-xl ring-1 ring-yellow-300/25 rounded-2xl overflow-hidden shadow-[0_1px_0_rgba(253,224,71,0.12)_inset]">
@@ -147,14 +162,14 @@ export default function LandingPage() {
           </form>
 
           {/* Example Prompts */}
-          <div className="space-y-3">
-            <p className="text-sm text-zinc-400 mb-4">Try an example:</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto">
+          <div className="space-y-4">
+            <p className="text-sm text-zinc-400 mb-5">Try an example:</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
               {examplePrompts.map((example, index) => (
                 <button
                   key={index}
                   onClick={() => setPrompt(example)}
-                  className="text-left p-3 rounded-xl bg-gray-900 hover:bg-gray-800 ring-1 ring-yellow-300/25 hover:ring-yellow-300/50 text-sm text-zinc-300 hover:text-zinc-50 transition"
+                  className="text-left p-4 rounded-xl bg-gray-900 hover:bg-gray-800 ring-1 ring-yellow-300/25 hover:ring-yellow-300/50 text-sm text-zinc-300 hover:text-zinc-50 transition"
                 >
                   {example}
                 </button>
@@ -163,14 +178,14 @@ export default function LandingPage() {
           </div>
         </div>
 
-        <section id="about" className="max-w-5xl mx-auto mb-16 motion-fade-up motion-delay-1">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <section id="about" className="max-w-5xl mx-auto mb-24 motion-fade-up motion-delay-1">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               { label: 'Prompt to prototype', value: 'Seconds' },
               { label: 'Built-in prompt limit', value: '3/IP/day' },
               { label: 'Live collaboration surface', value: 'Code + Preview' }
             ].map((item) => (
-              <div key={item.label} className="rounded-2xl p-5 bg-gray-900/90 ring-1 ring-yellow-300/20 text-center">
+              <div key={item.label} className="rounded-2xl p-6 bg-gray-900/90 ring-1 ring-yellow-300/20 text-center">
                 <p className="text-2xl font-semibold text-zinc-100">{item.value}</p>
                 <p className="text-sm text-zinc-400 mt-1">{item.label}</p>
               </div>
@@ -179,7 +194,7 @@ export default function LandingPage() {
         </section>
 
         {/* Features Grid */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto mt-16 motion-fade-up motion-delay-2">
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto mt-24 mb-24 motion-fade-up motion-delay-2">
           {[
             {
               icon: Code2,
@@ -207,13 +222,13 @@ export default function LandingPage() {
           ))}
         </section>
 
-        <section id="faq" className="max-w-5xl mx-auto mt-20 mb-10 motion-fade-up motion-delay-3">
-          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-zinc-100 text-center mb-8">
+        <section id="faq" className="max-w-5xl mx-auto mt-24 mb-16 motion-fade-up motion-delay-3">
+          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-zinc-100 text-center mb-12">
             Frequently Asked Questions
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {faqs.map((faq) => (
-              <div key={faq.question} className="rounded-2xl p-6 bg-gray-900 ring-1 ring-yellow-300/20">
+              <div key={faq.question} className="rounded-2xl p-7 bg-gray-900 ring-1 ring-yellow-300/20">
                 <h3 className="text-base font-semibold text-zinc-100 mb-2">{faq.question}</h3>
                 <p className="text-sm text-zinc-400 leading-relaxed">{faq.answer}</p>
               </div>
@@ -222,8 +237,11 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <footer className="relative z-10 border-t border-yellow-300/15 mt-12">
-        <div className="max-w-7xl mx-auto px-6 py-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      {/* History Modal */}
+      <History isOpen={showHistory} onClose={() => setShowHistory(false)} />
+
+      <footer className="relative z-10 border-t border-yellow-300/15 mt-16">
+        <div className="max-w-7xl mx-auto px-6 py-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div>
             <p className="text-zinc-200 font-medium">Bolt by Dev Sharma</p>
             <p className="text-zinc-400 text-sm">Build full-stack apps from natural language prompts.</p>

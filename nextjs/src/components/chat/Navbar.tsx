@@ -3,7 +3,8 @@ import { FileItem } from '@/types/file.type';
 import JSZip from 'jszip';
 import Link from 'next/link';
 import { useState } from 'react';
-import { Keyboard } from 'lucide-react';
+import { Keyboard, Clock } from 'lucide-react';
+import History from './History';
 
 interface NavbarProps {
   files: FileItem[];
@@ -12,6 +13,7 @@ interface NavbarProps {
 }
 
 export default function Navbar({ files, isSidebarOpen, onToggleSidebar }: NavbarProps) {
+  const [showHistory, setShowHistory] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   
   const addFilesToZip = (zip: JSZip, items: FileItem[], basePath: string = '') => {
@@ -91,6 +93,14 @@ export default function Navbar({ files, isSidebarOpen, onToggleSidebar }: Navbar
       </div>
       <div className="flex items-center gap-3">
         <button
+          onClick={() => setShowHistory(true)}
+          className="px-3 py-2 bg-gray-900 hover:bg-gray-800 text-gray-300 hover:text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+          title="Chat history"
+        >
+          <Clock className="w-4 h-4" />
+          <span className="hidden sm:inline">History</span>
+        </button>
+        <button
           onClick={() => setShowShortcuts(true)}
           className="px-3 py-2 bg-gray-900 hover:bg-gray-800 text-gray-300 hover:text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
           title="Keyboard shortcuts"
@@ -105,6 +115,9 @@ export default function Navbar({ files, isSidebarOpen, onToggleSidebar }: Navbar
           Download Source Code
         </button>
       </div>
+
+      {/* History Modal */}
+      <History isOpen={showHistory} onClose={() => setShowHistory(false)} />
 
       {/* Keyboard Shortcuts Modal */}
       {showShortcuts && (
@@ -134,7 +147,7 @@ export default function Navbar({ files, isSidebarOpen, onToggleSidebar }: Navbar
                 </kbd>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-gray-300">Clear chat history</span>
+                <span className="text-gray-300">Clear current chat</span>
                 <kbd className="px-2 py-1 bg-gray-800 border border-gray-700 rounded text-gray-300">
                   Cmd/Ctrl + Shift + C
                 </kbd>
