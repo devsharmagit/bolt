@@ -2,16 +2,14 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Zap, Sparkles, Code2, Layers, Clock } from 'lucide-react';
+import { Zap, Sparkles, Code2, Layers } from 'lucide-react';
 import { getRateLimitStatusAction } from '@/app/actions/rate-limit';
 import { chatStorage } from '@/lib/localStorage';
-import History from '@/components/chat/History';
 
 export default function LandingPage() {
   const [prompt, setPrompt] = useState('');
   const [remainingPrompts, setRemainingPrompts] = useState<number | null>(null);
   const [rateLimitLoading, setRateLimitLoading] = useState(true);
-  const [showHistory, setShowHistory] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -92,14 +90,6 @@ export default function LandingPage() {
           </span>
         </div>
         <nav className="flex items-center space-x-4 text-sm">
-          <button
-            onClick={() => setShowHistory(true)}
-            className="px-3 py-2 bg-gray-900 hover:bg-gray-800 text-gray-300 hover:text-white rounded-lg transition-colors flex items-center gap-2 ring-1 ring-yellow-300/25"
-            title="Chat history"
-          >
-            <Clock className="w-4 h-4" />
-            <span className="hidden sm:inline">History</span>
-          </button>
           <a href="#faq" className="hidden md:inline text-zinc-400 hover:text-zinc-100 transition-colors">FAQ</a>
           <a href="#about" className="hidden md:inline text-zinc-400 hover:text-zinc-100 transition-colors">About</a>
         </nav>
@@ -236,9 +226,6 @@ export default function LandingPage() {
           </div>
         </section>
       </main>
-
-      {/* History Modal */}
-      <History isOpen={showHistory} onClose={() => setShowHistory(false)} />
 
       <footer className="relative z-10 border-t border-yellow-300/15 mt-16">
         <div className="max-w-7xl mx-auto px-6 py-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">

@@ -14,10 +14,7 @@ export function Preview({ files, webContainer }: PreviewProps) {
   const [logs, setLogs] = useState<string[]>([]);
   const [iframeReady, setIframeReady] = useState(false);
   const [runtimeErrors, setRuntimeErrors] = useState<string[]>([]);
-  const [statusMessage, setStatusMessage] = useState<string>('');
-  const [progress, setProgress] = useState<number>(0);
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // 🔒 This ref ensures npm install + dev runs ONLY ONCE
   const hasStartedRef = useRef(false);
@@ -33,8 +30,6 @@ export function Preview({ files, webContainer }: PreviewProps) {
 
     const startPreview = async () => {
       try {
-setStatusMessage('Installing dependencies...');
-setProgress(10);
 setLogs((prev: string[]) => [...prev, '📦 Installing dependencies...']);
 
 const installProcess = await webContainer.spawn('npm', ['install']);
@@ -80,13 +75,6 @@ const installProcess = await webContainer.spawn('npm', ['install']);
     };
 
     startPreview();
-    
-    // Cleanup interval on unmount
-    return () => {
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-      }
-    };
   }, [webContainer, files]);
 
   // Listen for iframe errors and console messages
@@ -186,19 +174,6 @@ const installProcess = await webContainer.spawn('npm', ['install']);
       {(!url || !iframeReady) ? (
         !url ? (
           <div className="h-full flex flex-col items-center justify-center text-gray-400 px-4 py-2">
-            {/* Progress Bar */}
-            <div className="w-full max-w-2xl mb-6">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-300">{statusMessage}</span>
-                <span className="text-sm text-gray-400">{progress}%</span>
-              </div>
-              <div className="w-full bg-gray-800 rounded-full h-2 overflow-hidden">
-                <div 
-                  className="bg-blue-500 h-full rounded-full transition-all duration-300 ease-out"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-            </div>
             {/* Logs */}
             <div className="w-full max-w-2xl bg-gray-900 border border-gray-800 rounded-lg p-4 overflow-y-auto h-80 text-xs font-mono whitespace-pre-wrap">
               {logs.length === 0 ? <p>Starting preview…</p> : logs.map((log, i) => <div key={i}>{log}</div>)}

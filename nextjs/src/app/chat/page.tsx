@@ -169,7 +169,7 @@ export default function ChatPage() {
     if (initialPrompt) {
       init(initialPrompt);
     }
-  }, [initialPrompt]);
+  }, [initialPrompt, showToast]);
 
   useEffect(() => {
     const pendingSteps = steps.filter(({ status }) => status === "pending");
