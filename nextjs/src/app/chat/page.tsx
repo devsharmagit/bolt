@@ -13,16 +13,19 @@ import { Preview } from '@/components/chat/Preview';
 import { sortFileStructure } from '@/lib/file';
 import Navbar from '@/components/chat/Navbar';
 import { Code2, Eye } from 'lucide-react';
+import { useToast, ToastContainer } from '@/components/ui/Toast';
+import { chatStorage } from '@/lib/localStorage';
 
 
 export default function ChatPage() {
   const [initialPrompt, setInitialPrompt] = useState('');
 
-  const [laoding, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [remainingPrompts, setRemainingPrompts] = useState<number | null>(null);
   const [rateLimitMessage, setRateLimitMessage] = useState<string | null>(null);
 
   const [llmMessages, setLlmMessages] = useState<LlmMessage[]>([]);
+  const { toasts, showToast, dismissToast } = useToast();
 
   const webcontainer = useWebContainer();
   console.log("webcontainer is called");
@@ -35,13 +38,62 @@ export default function ChatPage() {
 
   const [files, setFiles] = useState<FileItem[]>([]);
 
+  // Load initial prompt from sessionStorage
   useEffect(() => {
-    const prompt = sessionStorage.getItem('initialPrompt');
+    const prompt = chatStorage.loadInitialPrompt();
     if (prompt) {
       setInitialPrompt(prompt);
-      sessionStorage.removeItem('initialPrompt'); // Clean up
+    }
+    
+    // Load chat history from localStorage
+    const savedHistory = chatStorage.loadHistory();
+    if (savedHistory.length > 0) {
+      setLlmMessages(savedHistory);
+      showToast('Chat history restored', 'success');
     }
   }, []);
+
+  // Save chat history to localStorage whenever it changes
+  useEffect(() => {
+    if (llmMessages.length > 0) {
+      chatStorage.saveHistory(llmMessages);
+    }
+  }, [llmMessages]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyboard = (e: KeyboardEvent) => {
+      // Cmd+K / Ctrl+K: Toggle sidebar
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsSidebarOpen((prev) => !prev);
+        showToast(`Sidebar ${!isSidebarOpen ? 'opened' : 'closed'}`, 'info');
+      }
+      
+      // Cmd+E / Ctrl+E: Toggle between code and preview
+      if ((e.metaKey || e.ctrlKey) && e.key === 'e') {
+        e.preventDefault();
+        setActiveTab((prev) => {
+          const newTab = prev === 'code' ? 'preview' : 'code';
+          showToast(`Switched to ${newTab}`, 'info');
+          return newTab;
+        });
+      }
+
+      // Cmd+Shift+C / Ctrl+Shift+C: Clear chat history
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'c') {
+        e.preventDefault();
+        if (confirm('Clear chat history? This cannot be undone.')) {
+          chatStorage.clearHistory();
+          setLlmMessages([]);
+          showToast('Chat history cleared', 'success');
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyboard);
+    return () => window.removeEventListener('keydown', handleKeyboard);
+  }, [isSidebarOpen, showToast]);
 
   useEffect(() => {
     const init = async (initialPrompt: string) => {
@@ -70,9 +122,11 @@ export default function ChatPage() {
 
         if (stepsResponse.error) {
           setRateLimitMessage(stepsResponse.error);
+          showToast(stepsResponse.error, 'error');
           return;
         }
         setRateLimitMessage(null);
+        showToast('Project generated successfully!', 'success');
 
         if (stepsResponse?.response) {
           const responseText = stepsResponse.response;
@@ -234,44 +288,54 @@ export default function ChatPage() {
 
   const handleSend = async (prompt: string) => {
     setLoading(true);
-    const stepsResponse = await chatAction([
-      ...llmMessages.filter(m => m.displayInChat !== false),
-      { role: "user", content: prompt, displayInChat: true }
-    ]);
-    setLoading(false);
-    setRemainingPrompts(stepsResponse.remainingPrompts);
+    try {
+      const stepsResponse = await chatAction([
+        ...llmMessages.filter(m => m.displayInChat !== false),
+        { role: "user", content: prompt, displayInChat: true }
+      ]);
+      setLoading(false);
+      setRemainingPrompts(stepsResponse.remainingPrompts);
 
-    if (stepsResponse.error) {
-      setRateLimitMessage(stepsResponse.error);
-      return;
+      if (stepsResponse.error) {
+        setRateLimitMessage(stepsResponse.error);
+        showToast(stepsResponse.error, 'error');
+        return;
+      }
+      setRateLimitMessage(null);
+
+      if (!stepsResponse?.response) {
+        showToast('No response from AI. Please try again.', 'error');
+        console.error('No response from chat action');
+        return;
+      }
+
+      showToast('Response generated successfully!', 'success');
+
+      const responseText = stepsResponse.response;
+
+      setLlmMessages(x => [
+        ...x,
+        { role: "user", content: prompt, displayInChat: true },
+        { role: "assistant", content: responseText }
+      ]);
+
+      setSteps(s => {
+        // Calculate the next available ID
+        const maxId = s.length > 0 ? Math.max(...s.map(step => step.id)) : 0;
+        const parsedSteps = parseXml(responseText, maxId + 1);
+        return [
+          ...s,
+          ...parsedSteps.map(x => ({
+            ...x,
+            status: "pending" as const
+          }))
+        ];
+      });
+    } catch (error) {
+      setLoading(false);
+      showToast('An error occurred. Please try again.', 'error');
+      console.error('Error in handleSend:', error);
     }
-    setRateLimitMessage(null);
-
-    if (!stepsResponse?.response) {
-      console.error('No response from chat action');
-      return;
-    }
-
-    const responseText = stepsResponse.response;
-
-    setLlmMessages(x => [
-      ...x,
-      { role: "user", content: prompt, displayInChat: true },
-      { role: "assistant", content: responseText }
-    ]);
-
-    setSteps(s => {
-      // Calculate the next available ID
-      const maxId = s.length > 0 ? Math.max(...s.map(step => step.id)) : 0;
-      const parsedSteps = parseXml(responseText, maxId + 1);
-      return [
-        ...s,
-        ...parsedSteps.map(x => ({
-          ...x,
-          status: "pending" as const
-        }))
-      ];
-    });
   };
 
   return (
@@ -285,7 +349,7 @@ export default function ChatPage() {
         {isSidebarOpen && (
           <div className="w-80 flex-shrink-0 border-r border-yellow-300/20">
             <Sidebar
-              loading={laoding}
+              loading={loading}
               messages={llmMessages}
               steps={steps}
               handleSend={handleSend}
@@ -360,5 +424,9 @@ export default function ChatPage() {
           </div>
         </div>
       </div>
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
-  )};
+  );
+}

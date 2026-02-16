@@ -5,6 +5,7 @@ export interface FileItem {
     content?: string;
     path: string;
   }
+  
   export interface Message {
     content: string;
     role: 'user' | 'assistant';
@@ -31,14 +32,6 @@ export interface FileItem {
   export interface Project {
     prompt: string;
     steps: Step[];
-  }
-  
-  export interface FileItem {
-    name: string;
-    type: 'file' | 'folder';
-    children?: FileItem[];
-    content?: string;
-    path: string;
   }
   
   export interface FileViewerProps {

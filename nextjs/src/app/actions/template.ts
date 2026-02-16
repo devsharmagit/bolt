@@ -46,9 +46,15 @@ export async function templateAction(prompt: string) {
       };
     }
 
-    throw new Error("Invalid template type returned from AI");
+    return {
+      prompts: [BASE_PROMPT, reactBasePrompt],
+      uiPrompts: [reactBasePrompt]
+    };
   } catch (error) {
     console.error('Error in templateAction:', error);
-    throw new Error('Failed to determine template type');
+    return {
+      prompts: [BASE_PROMPT, reactBasePrompt],
+      uiPrompts: [reactBasePrompt]
+    };
   }
 }

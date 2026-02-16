@@ -4,11 +4,16 @@ import { Redis } from '@upstash/redis';
 export const CHAT_PROMPT_LIMIT = 3;
 const CHAT_PROMPT_WINDOW_SECONDS = 60 * 60 * 24;
 
+// Check if rate limiting is enabled via environment variable
+const ENABLE_RATELIMIT = process.env.ENABLE_RATELIMIT === 'true';
+
 const redis = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
   ? Redis.fromEnv()
   : null;
 
-if (!redis) {
+if (!ENABLE_RATELIMIT) {
+  console.log('Rate limiting is disabled via ENABLE_RATELIMIT environment variable.');
+} else if (!redis) {
   console.warn('Upstash Redis environment variables are missing. Rate limiting is disabled.');
 }
 
@@ -48,7 +53,8 @@ function getPromptRateLimitKey(clientId: string) {
 }
 
 export async function getChatRateLimitStatus(): Promise<ChatRateLimitStatus> {
-  if (!redis) {
+  // Skip rate limiting if disabled
+  if (!ENABLE_RATELIMIT || !redis) {
     return {
       remaining: null,
       limit: CHAT_PROMPT_LIMIT
@@ -67,7 +73,8 @@ export async function getChatRateLimitStatus(): Promise<ChatRateLimitStatus> {
 }
 
 export async function checkAndConsumeChatRateLimit(): Promise<ChatRateLimitResult> {
-  if (!redis) {
+  // Skip rate limiting if disabled
+  if (!ENABLE_RATELIMIT || !redis) {
     return {
       success: true,
       remaining: null,

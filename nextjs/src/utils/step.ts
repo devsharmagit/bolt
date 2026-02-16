@@ -33,12 +33,14 @@ import { Step, StepType } from "@/types/file.type";
  * @param startId - The starting ID for the steps (default: 1). Use this to ensure unique IDs when called multiple times.
  */
 export function parseXml(response: string, startId: number = 1): Step[] {
-    // Extract the XML content between <boltArtifact> tags
-    const xmlMatch = response.match(/<boltArtifact[^>]*>([\s\S]*?)<\/boltArtifact>/);
-    
-    if (!xmlMatch) {
-      return [];
-    }
+    try {
+      // Extract the XML content between <boltArtifact> tags
+      const xmlMatch = response.match(/<boltArtifact[^>]*>([\s\S]*?)<\/boltArtifact>/);
+      
+      if (!xmlMatch) {
+        console.warn('No boltArtifact tags found in response');
+        return [];
+      }
   
     const xmlContent = xmlMatch[1];
     const steps: Step[] = [];
@@ -88,5 +90,9 @@ export function parseXml(response: string, startId: number = 1): Step[] {
       }
     }
   
-    return steps;
+      return steps;
+    } catch (error) {
+      console.error('Error parsing XML:', error);
+      return [];
+    }
   }

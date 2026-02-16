@@ -24,9 +24,15 @@ Create a `.env` file in the project root with:
 GOOGLE_API_KEY=your_google_api_key
 UPSTASH_REDIS_REST_URL=your_upstash_redis_rest_url
 UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_rest_token
+ENABLE_RATELIMIT=true
 ```
 
-`UPSTASH_REDIS_*` is used for IP-based rate limiting (`3` prompts per IP per day).
+### Rate Limiting
+
+- `UPSTASH_REDIS_*` is used for IP-based rate limiting (`3` prompts per IP per day).
+- `ENABLE_RATELIMIT` - Set to `true` to enable rate limiting (recommended for production), or `false` to disable (useful for development). If not set, rate limiting will be disabled.
+  - **Development**: Set to `false` or omit to skip rate limiting
+  - **Production**: Set to `true` to enable rate limiting
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 

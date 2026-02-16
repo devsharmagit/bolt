@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Zap, Sparkles, Code2, Layers } from 'lucide-react';
 import { getRateLimitStatusAction } from '@/app/actions/rate-limit';
+import { chatStorage } from '@/lib/localStorage';
 
 export default function LandingPage() {
   const [prompt, setPrompt] = useState('');
@@ -29,8 +30,8 @@ export default function LandingPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (prompt.trim()) {
-      // Store the prompt in sessionStorage or pass as URL param
-      sessionStorage.setItem('initialPrompt', prompt);
+      // Store the prompt using localStorage helper
+      chatStorage.saveInitialPrompt(prompt);
       router.push('/chat');
     }
   };
